@@ -6,7 +6,7 @@ import { contentService } from '../services/api';
 
 // Types
 export interface ContentItem {
-  id: string;
+  id: number;
   title: string;
   imageCount: number;
   videoCount: number;
@@ -85,7 +85,7 @@ const Home: React.FC = () => {
     ];
     
     return Array.from({ length: count }, (_, i) => ({
-      id: `content-${i + 1}`,
+      id: i + 1,
       title: 'Content title this is the content title this is the content',
       imageCount: 10,
       videoCount: Math.floor(Math.random() * 6),

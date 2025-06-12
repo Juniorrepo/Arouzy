@@ -40,6 +40,11 @@ func main() {
 
 	// Public routes
 	apiRouter.HandleFunc("/health", handlers.HealthCheckHandler).Methods("GET")
+	// Public user profile route
+	usersRouter := apiRouter.PathPrefix("/users").Subrouter()
+	usersRouter.HandleFunc("/{username}/profile", handlers.GetPublicUserProfileHandler).Methods("GET")
+	usersRouter.HandleFunc("/{username}/follow", middleware.AuthMiddleware(handlers.FollowUserHandler)).Methods("POST")
+	usersRouter.HandleFunc("/{username}/follow", middleware.AuthMiddleware(handlers.UnfollowUserHandler)).Methods("DELETE")
 
 	// Auth routes
 	authRouter := apiRouter.PathPrefix("/auth").Subrouter()

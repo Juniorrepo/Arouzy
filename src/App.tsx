@@ -4,7 +4,7 @@ import { useAuth } from './contexts/AuthContext';
 
 // Components
 import Layout from './components/Layout/Layout';
-import ProtectedRoute from './components/Auth/ProtectedRoute';
+import Profile from './pages/Profile';
 
 // Pages
 import Home from './pages/Home';
@@ -26,14 +26,8 @@ function App() {
           isAuthenticated ? <Navigate to="/" /> : <Login />
         } />
         
-        {/* Protected Routes */}
-        <Route path="/profile" element={
-          <ProtectedRoute>
-            <div className="min-h-screen flex items-center justify-center">
-              <h1 className="text-2xl">Profile Page (Protected)</h1>
-            </div>
-          </ProtectedRoute>
-        } />
+        {/* Public Profile Page */}
+        <Route path="/profile/:username" element={<Profile />} />
         
         {/* Not Found */}
         <Route path="*" element={<NotFound />} />

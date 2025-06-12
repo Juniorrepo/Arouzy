@@ -4,7 +4,7 @@ import { useAuth } from '../../contexts/AuthContext';
 import { Search, Menu, X, User, LogOut } from 'lucide-react';
 
 const Navbar: React.FC = () => {
-  const { isAuthenticated, logout } = useAuth();
+  const { user, isAuthenticated, logout } = useAuth();
   const navigate = useNavigate();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isProfileMenuOpen, setIsProfileMenuOpen] = useState(false);
@@ -65,7 +65,7 @@ const Navbar: React.FC = () => {
               {isProfileMenuOpen && (
                 <div className="absolute right-0 mt-2 w-48 bg-dark-800 rounded-md shadow-lg py-1 z-10 animate-fade-in">
                   <Link
-                    to="/profile"
+                    to={`/profile/${user?.username}`}
                     className="block px-4 py-2 text-sm text-white hover:bg-dark-700"
                     onClick={() => setIsProfileMenuOpen(false)}
                   >
@@ -150,7 +150,7 @@ const Navbar: React.FC = () => {
             ) : (
               <div className="flex flex-col space-y-2 pt-4 border-t border-dark-600">
                 <Link
-                  to="/profile"
+                  to={`/profile/${user?.username}`}
                   className="text-white hover:text-primary-300 transition-colors py-2"
                   onClick={() => setIsMenuOpen(false)}
                 >

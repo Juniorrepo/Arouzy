@@ -43,6 +43,12 @@ export const contentService = {
   getContentById: async (id: string) => {
     return api.get(`/api/content/${id}`);
   },
+  getContentByUser: async (username: string, page = 1, sort = 'hot') => {
+    return api.get('/api/content', { params: { page, sort, username } });
+  },
+  getCollectionsByUser: async (userId: number, page = 1, sort = 'hot') => {
+    return api.get('/api/content', { params: { page, sort, collectedBy: userId } });
+  },
 };
 
 // User API services
@@ -52,5 +58,14 @@ export const userService = {
   },
   updateUserProfile: async (data: any) => {
     return api.put('/api/user/profile', data);
+  },
+  followUser: async (username: string) => {
+    return api.post(`/api/users/${username}/follow`);
+  },
+  unfollowUser: async (username: string) => {
+    return api.delete(`/api/users/${username}/follow`);
+  },
+  getPublicUserProfile: async (username: string) => {
+    return api.get(`/api/users/${username}/profile`);
   },
 };

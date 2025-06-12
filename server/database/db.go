@@ -131,5 +131,18 @@ func initializeSchema(ctx context.Context, pool *pgxpool.Pool) error {
 		return fmt.Errorf("error creating upvotes table: %v", err)
 	}
 
+	// Create follows table
+	_, err = pool.Exec(ctx, `
+		CREATE TABLE IF NOT EXISTS follows (
+			follower_id INTEGER REFERENCES users(id),
+			following_id INTEGER REFERENCES users(id),
+			created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+			PRIMARY KEY (follower_id, following_id)
+		)
+	`)
+	if err != nil {
+		return fmt.Errorf("error creating follows table: %v", err)
+	}
+
 	return nil
 }

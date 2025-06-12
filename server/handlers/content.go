@@ -46,6 +46,22 @@ func GetContentHandler(w http.ResponseWriter, r *http.Request) {
 	args := []interface{}{}
 	argPosition := 1
 
+	// Filter by author username
+	if username := queryParams.Get("username"); username != "" {
+		whereClause += fmt.Sprintf("AND c.user_id = (SELECT id FROM users WHERE username = $%d) ", argPosition)
+		args = append(args, username)
+		argPosition++
+	}
+
+	// Filter by user's collections (upvoted content)
+	if collectedBy := queryParams.Get("collectedBy"); collectedBy != "" {
+		if userID, err := strconv.Atoi(collectedBy); err == nil {
+			whereClause += fmt.Sprintf("AND c.id IN (SELECT content_id FROM upvotes WHERE user_id = $%d) ", argPosition)
+			args = append(args, userID)
+			argPosition++
+		}
+	}
+
 	// Filter by minimum upvotes
 	if minUpvotes, err := strconv.Atoi(queryParams.Get("minUpvotes")); err == nil && minUpvotes > 0 {
 		whereClause += fmt.Sprintf("AND (SELECT COUNT(*) FROM upvotes WHERE content_id = c.id) >= $%d ", argPosition)
@@ -102,7 +118,7 @@ func GetContentHandler(w http.ResponseWriter, r *http.Request) {
 	defer rows.Close()
 
 	// Parse results
-	var contentItems []models.ContentItem
+	contentItems := []models.ContentItem{}
 	for rows.Next() {
 		var item models.ContentItem
 		var createdAt time.Time

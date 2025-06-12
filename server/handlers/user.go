@@ -3,12 +3,15 @@ package handlers
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"net/http"
 	"time"
 
 	"project/server/database"
 	"project/server/models"
 
+	"github.com/gorilla/mux"
+	"github.com/jackc/pgx/v5"
 	"golang.org/x/crypto/bcrypt"
 )
 
@@ -157,4 +160,117 @@ func UpdateUserProfileHandler(w http.ResponseWriter, r *http.Request) {
 	// Return updated user
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(user)
+}
+
+// GetPublicUserProfileHandler returns profile info for any user by username
+func GetPublicUserProfileHandler(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	username := vars["username"]
+
+	ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
+	defer cancel()
+
+	var user models.User
+	err := database.DBPool.QueryRow(ctx,
+		"SELECT id, username, email FROM users WHERE username = $1", username,
+	).Scan(&user.ID, &user.Username, &user.Email)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			http.Error(w, "User not found", http.StatusNotFound)
+		} else {
+			http.Error(w, "Database error", http.StatusInternalServerError)
+		}
+		return
+	}
+
+	profile := models.UserProfile{User: user}
+	err = database.DBPool.QueryRow(ctx,
+		`SELECT 
+			(SELECT COUNT(*) FROM content WHERE user_id = $1) as content_count,
+			(SELECT COUNT(*) FROM upvotes WHERE user_id = $1) as upvotes_given
+		`, user.ID,
+	).Scan(&profile.ContentCount, &profile.UpvotesGiven)
+	if err != nil {
+		http.Error(w, "Error fetching user profile", http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(profile)
+}
+
+// FollowUserHandler allows the authenticated user to follow another user
+func FollowUserHandler(w http.ResponseWriter, r *http.Request) {
+	authUser, ok := r.Context().Value(models.UserContextKey).(models.User)
+	if !ok {
+		http.Error(w, "User not found in context", http.StatusInternalServerError)
+		return
+	}
+	vars := mux.Vars(r)
+	username := vars["username"]
+	if username == authUser.Username {
+		http.Error(w, "Cannot follow yourself", http.StatusBadRequest)
+		return
+	}
+	ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
+	defer cancel()
+	// Find target user ID
+	var targetID int
+	err := database.DBPool.QueryRow(ctx, "SELECT id FROM users WHERE username = $1", username).Scan(&targetID)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			http.Error(w, "User not found", http.StatusNotFound)
+		} else {
+			http.Error(w, "Database error", http.StatusInternalServerError)
+		}
+		return
+	}
+	// Insert follow relationship
+	_, err = database.DBPool.Exec(ctx,
+		"INSERT INTO follows (follower_id, following_id) VALUES ($1, $2) ON CONFLICT DO NOTHING",
+		authUser.ID, targetID,
+	)
+	if err != nil {
+		http.Error(w, "Error following user", http.StatusInternalServerError)
+		return
+	}
+	w.WriteHeader(http.StatusNoContent)
+}
+
+// UnfollowUserHandler allows the authenticated user to unfollow another user
+func UnfollowUserHandler(w http.ResponseWriter, r *http.Request) {
+	authUser, ok := r.Context().Value(models.UserContextKey).(models.User)
+	if !ok {
+		http.Error(w, "User not found in context", http.StatusInternalServerError)
+		return
+	}
+	vars := mux.Vars(r)
+	username := vars["username"]
+	if username == authUser.Username {
+		http.Error(w, "Cannot unfollow yourself", http.StatusBadRequest)
+		return
+	}
+	ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
+	defer cancel()
+	// Find target user ID
+	var targetID int
+	err := database.DBPool.QueryRow(ctx, "SELECT id FROM users WHERE username = $1", username).Scan(&targetID)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			http.Error(w, "User not found", http.StatusNotFound)
+		} else {
+			http.Error(w, "Database error", http.StatusInternalServerError)
+		}
+		return
+	}
+	// Delete follow relationship
+	_, err = database.DBPool.Exec(ctx,
+		"DELETE FROM follows WHERE follower_id = $1 AND following_id = $2",
+		authUser.ID, targetID,
+	)
+	if err != nil {
+		http.Error(w, "Error unfollowing user", http.StatusInternalServerError)
+		return
+	}
+	w.WriteHeader(http.StatusNoContent)
 }
