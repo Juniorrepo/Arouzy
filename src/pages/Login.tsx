@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useLocation, Navigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 
 const Login: React.FC = () => {
@@ -8,8 +8,14 @@ const Login: React.FC = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [formError, setFormError] = useState('');
   
-  const { login } = useAuth();
-  const navigate = useNavigate();
+  const { login, isAuthenticated } = useAuth();
+  const location = useLocation();
+  const from = (location.state as any)?.from?.pathname || '/';
+
+  // If already authenticated, redirect back to the original page
+  if (isAuthenticated) {
+    return <Navigate to={from} replace />;
+  }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -23,7 +29,7 @@ const Login: React.FC = () => {
     try {
       setIsSubmitting(true);
       await login(email, password);
-      navigate('/');
+      // Navigation after login is handled by redirect above
     } catch (error: any) {
       setFormError(error.message);
     } finally {
