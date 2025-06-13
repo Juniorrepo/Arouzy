@@ -28,9 +28,9 @@ type User struct {
 
 // UserProfile represents detailed user information
 type UserProfile struct {
-	User         User `json:"user"`
-	ContentCount int  `json:"contentCount"`
-	UpvotesGiven int  `json:"upvotesGiven"`
+	User          User `json:"user"`
+	FollowerCount int  `json:"followerCount"`
+	UpvotesGiven  int  `json:"upvotesGiven"`
 }
 
 // UpdateUserRequest represents the request to update user profile
@@ -42,4 +42,5 @@ type UpdateUserRequest struct {
 
 // UserContextKey is the key used to store/retrieve user from context
 type userContextKey string
+
 const UserContextKey userContextKey = "user"

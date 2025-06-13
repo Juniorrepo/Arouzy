@@ -35,11 +35,11 @@ func GetUserProfileHandler(w http.ResponseWriter, r *http.Request) {
 	// Query for user stats
 	err := database.DBPool.QueryRow(ctx,
 		`SELECT 
-			(SELECT COUNT(*) FROM content WHERE user_id = $1) as content_count,
+			(SELECT COUNT(*) FROM follows WHERE following_id = $1) as follower_count,
 			(SELECT COUNT(*) FROM upvotes WHERE user_id = $1) as upvotes_given
 		`,
 		user.ID,
-	).Scan(&profile.ContentCount, &profile.UpvotesGiven)
+	).Scan(&profile.FollowerCount, &profile.UpvotesGiven)
 
 	if err != nil {
 		http.Error(w, "Error fetching user profile", http.StatusInternalServerError)
@@ -186,10 +186,10 @@ func GetPublicUserProfileHandler(w http.ResponseWriter, r *http.Request) {
 	profile := models.UserProfile{User: user}
 	err = database.DBPool.QueryRow(ctx,
 		`SELECT 
-			(SELECT COUNT(*) FROM content WHERE user_id = $1) as content_count,
+			(SELECT COUNT(*) FROM follows WHERE following_id = $1) as follower_count,
 			(SELECT COUNT(*) FROM upvotes WHERE user_id = $1) as upvotes_given
 		`, user.ID,
-	).Scan(&profile.ContentCount, &profile.UpvotesGiven)
+	).Scan(&profile.FollowerCount, &profile.UpvotesGiven)
 	if err != nil {
 		http.Error(w, "Error fetching user profile", http.StatusInternalServerError)
 		return
@@ -273,4 +273,45 @@ func UnfollowUserHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	w.WriteHeader(http.StatusNoContent)
+}
+
+// CheckFollowStatusHandler checks if the authenticated user is following another user
+func CheckFollowStatusHandler(w http.ResponseWriter, r *http.Request) {
+	authUser, ok := r.Context().Value(models.UserContextKey).(models.User)
+	if !ok {
+		http.Error(w, "User not found in context", http.StatusInternalServerError)
+		return
+	}
+	vars := mux.Vars(r)
+	username := vars["username"]
+
+	ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
+	defer cancel()
+
+	// Find target user ID
+	var targetID int
+	err := database.DBPool.QueryRow(ctx, "SELECT id FROM users WHERE username = $1", username).Scan(&targetID)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			http.Error(w, "User not found", http.StatusNotFound)
+		} else {
+			http.Error(w, "Database error", http.StatusInternalServerError)
+		}
+		return
+	}
+
+	// Check if follow relationship exists
+	var exists bool
+	err = database.DBPool.QueryRow(ctx,
+		"SELECT EXISTS(SELECT 1 FROM follows WHERE follower_id = $1 AND following_id = $2)",
+		authUser.ID, targetID,
+	).Scan(&exists)
+
+	if err != nil {
+		http.Error(w, "Error checking follow status", http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(map[string]bool{"isFollowing": exists})
 }

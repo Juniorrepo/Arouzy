@@ -23,6 +23,7 @@ interface UserProfile {
   };
   contentCount: number;
   upvotesGiven: number;
+  followerCount: number;
 }
 
 const Profile: React.FC = () => {
@@ -52,6 +53,16 @@ const Profile: React.FC = () => {
       try {
         const response = await userService.getPublicUserProfile(username!);
         setProfile(response.data);
+        
+        // Check follow status if user is authenticated and not viewing their own profile
+        if (currentUser && currentUser.username !== username) {
+          try {
+            const followStatus = await userService.checkFollowStatus(username!);
+            setIsFollowing(followStatus.data.isFollowing);
+          } catch (error) {
+            console.error('Error checking follow status:', error);
+          }
+        }
       } catch (error) {
         console.error('Error fetching profile:', error);
       } finally {
@@ -59,7 +70,7 @@ const Profile: React.FC = () => {
       }
     };
     fetchProfile();
-  }, [username]);
+  }, [username, currentUser]);
 
   useEffect(() => {
     if (!profile) return;
@@ -101,9 +112,19 @@ const Profile: React.FC = () => {
       if (isFollowing) {
         await userService.unfollowUser(profile.user.username);
         setIsFollowing(false);
+        // Update follower count
+        setProfile(prev => prev ? {
+          ...prev,
+          followerCount: prev.followerCount - 1
+        } : null);
       } else {
         await userService.followUser(profile.user.username);
         setIsFollowing(true);
+        // Update follower count
+        setProfile(prev => prev ? {
+          ...prev,
+          followerCount: prev.followerCount + 1
+        } : null);
       }
     } catch (error) {
       console.error('Error following/unfollowing user:', error);
@@ -134,22 +155,24 @@ const Profile: React.FC = () => {
         <div className="w-32 h-32 rounded-full bg-gray-500 mb-4" />
         <h1 className="text-xl font-semibold text-primary-500">{profile.user.username}</h1>
         <p className="text-gray-400 mt-2">
-          {profile.contentCount} content &middot; {profile.upvotesGiven} likes
+          {profile.followerCount} followers &middot; {profile.upvotesGiven} likes
         </p>
-        <div className="flex space-x-4 mt-4">
-          <button
-            className="px-4 py-2 bg-primary-500 text-white rounded-full hover:bg-primary-600"
-            onClick={handleFollow}
-          >
-            {isFollowing ? 'Unfollow' : 'Follow'}
-          </button>
-          <button
-            className="px-4 py-2 bg-primary-500 text-white rounded-full hover:bg-primary-600"
-            onClick={handleMessage}
-          >
-            Message
-          </button>
-        </div>
+        {currentUser && currentUser.username !== profile.user.username && (
+          <div className="flex space-x-4 mt-4">
+            <button
+              className="px-4 py-2 bg-primary-500 text-white rounded-full hover:bg-primary-600"
+              onClick={handleFollow}
+            >
+              {isFollowing ? 'Unfollow' : 'Follow'}
+            </button>
+            <button
+              className="px-4 py-2 bg-primary-500 text-white rounded-full hover:bg-primary-600"
+              onClick={handleMessage}
+            >
+              Message
+            </button>
+          </div>
+        )}
         <div className="flex space-x-8 mt-6 border-b border-gray-700">
           <button
             className={`pb-2 ${

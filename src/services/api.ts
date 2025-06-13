@@ -68,4 +68,7 @@ export const userService = {
   getPublicUserProfile: async (username: string) => {
     return api.get(`/api/users/${username}/profile`);
   },
+  checkFollowStatus: async (username: string) => {
+    return api.get(`/api/users/${username}/follow/status`);
+  },
 };
