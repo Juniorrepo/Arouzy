@@ -71,7 +71,7 @@ func main() {
 
 	// Set up CORS
 	c := cors.New(cors.Options{
-		AllowedOrigins:   []string{"http://localhost:5173", "http://localhost:3000", "http://localhost:5174", "https://arouzy.up.railway.app"},
+		AllowedOrigins:   []string{"http://localhost:5173", "http://localhost:3000", "http://localhost:5174", "https://arouzy.up.railway.app", "https://arouzy.vercel.app"},
 		AllowedMethods:   []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
 		AllowedHeaders:   []string{"Content-Type", "Authorization"},
 		AllowCredentials: true,
