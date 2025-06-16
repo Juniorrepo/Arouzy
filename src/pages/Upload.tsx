@@ -17,7 +17,7 @@ const Upload: React.FC = () => {
 
   const uploadFile = (fileObj: { file: File; progress: number; status: string; }, idx: number) => {
     const xhr = new XMLHttpRequest();
-    xhr.open('POST', 'http://localhost:8080/api/upload');
+    xhr.open('POST', `${import.meta.env.VITE_API_URL}/api/upload`);
 
     xhr.upload.onprogress = (event) => {
       if (event.lengthComputable) {
