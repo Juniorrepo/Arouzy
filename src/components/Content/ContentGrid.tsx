@@ -29,7 +29,7 @@ const ContentGrid: React.FC<ContentGridProps> = ({ content }) => {
       className="masonry-grid mt-6"
       columnClassName="masonry-grid-column"
     >
-      {content.map((item:any) => {
+      {content.map((item) => {
         const height = getRandomHeight();
         return (
           <div key={item.id} className="mb-4 animate-fade-in">

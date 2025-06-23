@@ -11,17 +11,14 @@
     "server": "cd server && go run ."
   },
   "dependencies": {
-    "axios": "^1.6.7",
-    "framer-motion": "^11.0.8",
-    "jwt-decode": "^4.0.0",
     "lucide-react": "^0.344.0",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
-    "react-hot-toast": "^2.5.2",
-    "react-masonry-css": "^1.0.16",
     "react-router-dom": "^6.22.3",
-    "socket.io-client": "^2.4.0",
-    "zustand": "^5.0.5"
+    "axios": "^1.6.7",
+    "jwt-decode": "^4.0.0",
+    "react-masonry-css": "^1.0.16",
+    "framer-motion": "^11.0.8"
   },
   "devDependencies": {
     "@eslint/js": "^9.9.1",
