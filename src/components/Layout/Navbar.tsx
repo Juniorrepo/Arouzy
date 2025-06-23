@@ -11,12 +11,13 @@ const Navbar: React.FC = () => {
 
   const toggleMenu = () => setIsMenuOpen(!isMenuOpen);
   const toggleProfileMenu = () => setIsProfileMenuOpen(!isProfileMenuOpen);
-  
+
   const handleLogout = () => {
     logout();
     navigate('/login');
     setIsProfileMenuOpen(false);
   };
+  console.log(user)
 
   return (
     <nav className="bg-dark-900 py-4 px-6 border-b border-dark-600">
@@ -51,51 +52,61 @@ const Navbar: React.FC = () => {
         {/* Auth Buttons / User Profile */}
         <div className="hidden md:flex items-center space-x-4">
           {isAuthenticated ? (
-            <div className="relative">
-              <button
-                onClick={toggleProfileMenu}
-                className="flex items-center space-x-2 text-white hover:text-primary-300 transition-colors focus:outline-none"
+            <div className="flex items-center space-x-4">
+              {/* Chat Link */}
+              <Link
+                to="/chat"
+                className="text-white hover:text-primary-300 transition-colors"
               >
-                <div className="w-8 h-8 rounded-full bg-primary-500 flex items-center justify-center">
-                  <User className="h-5 w-5 text-white" />
-                </div>
-              </button>
+               Messsage
+              </Link>
 
               {/* Profile Dropdown */}
-              {isProfileMenuOpen && (
-                <div className="absolute right-0 mt-2 w-48 bg-dark-800 rounded-md shadow-lg py-1 z-10 animate-fade-in">
-                  <Link
-                    to={`/profile/${user?.username}`}
-                    className="block px-4 py-2 text-sm text-white hover:bg-dark-700"
-                    onClick={() => setIsProfileMenuOpen(false)}
-                  >
-                    Profile
-                  </Link>
-                  <Link
-                    to={`/upload`}
-                    className="block px-4 py-2 text-sm text-white hover:bg-dark-700"
-                    onClick={() => setIsProfileMenuOpen(false)}
-                  >
-                    Upload
-                  </Link>
-                  <button
-                    onClick={handleLogout}
-                    className="block w-full text-left px-4 py-2 text-sm text-white hover:bg-dark-700"
-                  >
-                    <div className="flex items-center">
-                      <LogOut className="h-4 w-4 mr-2" />
-                      Sign out
-                    </div>
-                  </button>
-                </div>
-              )}
+              <div className="relative">
+                <button
+                  onClick={toggleProfileMenu}
+                  className="flex items-center space-x-2 text-white hover:text-primary-300 transition-colors focus:outline-none"
+                >
+                  <div className="w-8 h-8 rounded-full bg-primary-500 flex items-center justify-center">
+                    <User className="h-5 w-5 text-white" />
+                  </div>
+                </button>
+
+                {isProfileMenuOpen && (
+                  <div className="absolute right-0 mt-2 w-48 bg-dark-800 rounded-md shadow-lg py-1 z-10 animate-fade-in">
+                    <Link
+                      to={`/profile/${user?.username}`}
+                      className="block px-4 py-2 text-sm text-white hover:bg-dark-700"
+                      onClick={() => setIsProfileMenuOpen(false)}
+                    >
+                      Profile
+                    </Link>
+                    <Link
+                      to={`/upload`}
+                      className="block px-4 py-2 text-sm text-white hover:bg-dark-700"
+                      onClick={() => setIsProfileMenuOpen(false)}
+                    >
+                      Upload
+                    </Link>
+                    <button
+                      onClick={handleLogout}
+                      className="block w-full text-left px-4 py-2 text-sm text-white hover:bg-dark-700"
+                    >
+                      <div className="flex items-center">
+                        <LogOut className="h-4 w-4 mr-2" />
+                        Sign out
+                      </div>
+                    </button>
+                  </div>
+                )}
+              </div>
             </div>
           ) : (
             <Link
               to="/signup"
               className="bg-primary-500 hover:bg-primary-600 text-white px-4 py-1.5 rounded-full transition-colors duration-200"
             >
-              sign up
+              Sign up
             </Link>
           )}
         </div>
@@ -162,6 +173,13 @@ const Navbar: React.FC = () => {
                   onClick={() => setIsMenuOpen(false)}
                 >
                   Profile
+                </Link>
+                <Link
+                  to="/chat"
+                  className="text-white hover:text-primary-300 transition-colors py-2"
+                  onClick={() => setIsMenuOpen(false)}
+                >
+                  💬 Chat
                 </Link>
                 <button
                   onClick={() => {

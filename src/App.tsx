@@ -12,6 +12,11 @@ import SignUp from './pages/SignUp';
 import Login from './pages/Login';
 import NotFound from './pages/NotFound';
 import Upload from './pages/Upload';
+import ChatHeader from './components/chat/chatHeader';
+import ChatContainer from './components/chat/chatContainer';
+import ChatUI from './components/chat/chatContainer';
+import ChatHomePage from './components/chat/chatHome';
+import MessageInput from './components/chat/messageInput';
 
 function App() {
   const { isAuthenticated } = useAuth();
@@ -28,6 +33,10 @@ function App() {
         
         {/* Public Profile Page */}
         <Route path="/profile/:username" element={<Profile />} />
+        
+
+        {/* Chat Page */}
+       <Route path="/chat" element={<ChatHomePage />} />
 
         {/* Upload Page */}
         <Route path="/upload" element={
