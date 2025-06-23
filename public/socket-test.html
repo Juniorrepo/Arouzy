@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Socket.IO Test Client</title>
+  <script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
+</head>
+<body>
+  <h1>Socket.IO Test Client</h1>
+  <div>
+    <input id="msgInput" type="text" placeholder="Type a message...">
+    <button onclick="sendMessage()">Send</button>
+  </div>
+  <div id="log" style="margin-top:20px; border:1px solid #ccc; padding:10px; width:400px; height:200px; overflow:auto;"></div>
+  <script>
+    // Connect to the Go Socket.IO server
+    const socket = io('http://localhost:8081');
+
+    socket.on('connect', () => {
+      log('Connected! Socket ID: ' + socket.id);
+    });
+
+    socket.on('disconnect', () => {
+      log('Disconnected from server');
+    });
+
+    socket.on('message', (msg) => {
+      log('Received message: ' + msg);
+    });
+
+    function sendMessage() {
+      const input = document.getElementById('msgInput');
+      const msg = input.value;
+      if (msg) {
+        socket.emit('message', msg);
+        log('Sent message: ' + msg);
+        input.value = '';
+      }
+    }
+
+    function log(text) {
+      const logDiv = document.getElementById('log');
+      logDiv.innerHTML += text + '<br>';
+      logDiv.scrollTop = logDiv.scrollHeight;
+    }
+  </script>
+</body>
+</html> 

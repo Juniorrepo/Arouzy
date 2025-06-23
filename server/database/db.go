@@ -18,7 +18,8 @@ func InitDB() (*pgxpool.Pool, error) {
 	dbURL := os.Getenv("DATABASE_URL")
 	if dbURL == "" {
 		// Default local connection if not set
-		dbURL = "postgres://postgres:postgres@localhost:5432/arouzy"
+		// dbURL = "postgresql://neondb_owner:npg_p3vZN6cBWaGf@ep-lucky-mouse-a5relxpq.us-east-2.aws.neon.tech/neondb?sslmode=require"
+		dbURL = "postgresql://neondb_owner:npg_LfJBo7bti8OY@ep-morning-bush-a55x53mg-pooler.us-east-2.aws.neon.tech/neondb?sslmode=require"
 	}
 
 	// Create connection pool configuration
@@ -138,6 +139,16 @@ func initializeSchema(ctx context.Context, pool *pgxpool.Pool) error {
 			following_id INTEGER REFERENCES users(id),
 			created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
 			PRIMARY KEY (follower_id, following_id)
+		)
+	`)
+		// Messages table for chat
+	_, err = pool.Exec(ctx, `
+		CREATE TABLE IF NOT EXISTS messages (
+			id SERIAL PRIMARY KEY,
+			sender_id INTEGER REFERENCES users(id),
+			recipient_id INTEGER REFERENCES users(id),
+			content TEXT NOT NULL,
+			created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 		)
 	`)
 	if err != nil {

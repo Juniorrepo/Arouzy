@@ -1,7 +1,7 @@
 import axios from 'axios';
 
 // Define base URL for different environments
-const BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8080';
+const BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8081';
 
 export const api = axios.create({
   baseURL: BASE_URL,
@@ -70,5 +70,19 @@ export const userService = {
   },
   checkFollowStatus: async (username: string) => {
     return api.get(`/api/users/${username}/follow/status`);
+  },
+};
+
+
+// Chat API services
+export const chatService = {
+  getUsers: async () => {
+    return api.get('/api/messages/users');
+  },
+  getMessages: async (userId: string) => {
+    return api.get(`/api/messages/${userId}`);
+  },
+  sendMessage: async (userId: string, messageData: { text?: string; image?: string }) => {
+    return api.post(`/api/messages/send/${userId}`, messageData);
   },
 };
