@@ -173,12 +173,10 @@ const Upload: React.FC = () => {
 
   return (
     <div className="max-w-4xl mx-auto px-4 py-8">
-      <div className="bg-white rounded-lg shadow-lg p-6">
+      <div className="bg-dark-800 rounded-lg shadow-lg p-6">
         <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">
-            Upload Content
-          </h1>
-          <p className="text-gray-600">
+          <h1 className="text-3xl font-bold mb-2">Upload Content</h1>
+          <p className="text-gray-100">
             Share your amazing content with the Arouzy community
           </p>
         </div>
@@ -186,7 +184,7 @@ const Upload: React.FC = () => {
         <form onSubmit={handleSubmit} className="space-y-6">
           {/* File Upload Section */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-3">
+            <label className="block text-sm font-medium text-gray-100 mb-3">
               Upload Files
             </label>
 
@@ -196,10 +194,10 @@ const Upload: React.FC = () => {
               onClick={() => fileInputRef.current?.click()}
             >
               <UploadIcon className="mx-auto h-12 w-12 text-gray-400 mb-4" />
-              <p className="text-lg font-medium text-gray-900 mb-2">
+              <p className="text-lg font-medium text-gray-100 mb-2">
                 Drop files here or click to upload
               </p>
-              <p className="text-sm text-gray-500">
+              <p className="text-sm text-gray-100">
                 Supports images (JPG, PNG, GIF) and videos (MP4, MOV, AVI)
               </p>
               <input
@@ -263,7 +261,7 @@ const Upload: React.FC = () => {
             <div className="md:col-span-2">
               <label
                 htmlFor="title"
-                className="block text-sm font-medium text-gray-700 mb-2"
+                className="block text-sm font-medium text-gray-100 mb-2"
               >
                 Title *
               </label>
@@ -272,7 +270,7 @@ const Upload: React.FC = () => {
                 id="title"
                 value={formData.title}
                 onChange={(e) => handleInputChange("title", e.target.value)}
-                className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                className={`w-full bg-dark-800 px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${
                   errors.title ? "border-red-500" : "border-gray-300"
                 }`}
                 placeholder="Enter a compelling title for your content"
@@ -300,7 +298,7 @@ const Upload: React.FC = () => {
                   handleInputChange("description", e.target.value)
                 }
                 rows={4}
-                className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                className={`w-full bg-dark-800 px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${
                   errors.description ? "border-red-500" : "border-gray-300"
                 }`}
                 placeholder="Describe your content (optional)"
@@ -330,7 +328,7 @@ const Upload: React.FC = () => {
                   id="tags"
                   value={formData.tags}
                   onChange={(e) => handleInputChange("tags", e.target.value)}
-                  className="w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full bg-dark-800 pl-10 pr-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                   placeholder="Enter tags separated by commas (e.g., art, design, creative)"
                 />
               </div>
@@ -365,14 +363,14 @@ const Upload: React.FC = () => {
             <button
               type="button"
               onClick={() => navigate("/")}
-              className="px-6 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50 transition-colors"
+              className="px-6 py-2 border border-gray-300 rounded-md text-gray-100 hover:bg-gray-800 transition-colors"
             >
               Cancel
             </button>
             <button
               type="submit"
               disabled={isSubmitting}
-              className="px-6 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center"
+              className="px-6 py-2 bg-primary-500 text-white rounded-md disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center"
             >
               {isSubmitting ? (
                 <>

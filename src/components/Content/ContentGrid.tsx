@@ -1,8 +1,13 @@
-import React from 'react';
-import { Link } from 'react-router-dom';
-import Masonry from 'react-masonry-css';
-import { ContentItem } from '../../pages/Home';
-import { Image, Film } from 'lucide-react';
+import React from "react";
+import { Link } from "react-router-dom";
+import Masonry from "react-masonry-css";
+import { ContentItem } from "../../pages/Home";
+import { Image, Film } from "lucide-react";
+import {
+  getThumbnailUrl,
+  isImageUrl,
+  getFallbackGradient,
+} from "../../utils/imageUtils";
 
 interface ContentGridProps {
   content: ContentItem[];
@@ -31,6 +36,9 @@ const ContentGrid: React.FC<ContentGridProps> = ({ content }) => {
     >
       {content.map((item) => {
         const height = getRandomHeight();
+        const thumbnailUrl = getThumbnailUrl(item.thumbnail);
+        const isImage = isImageUrl(item.thumbnail);
+
         return (
           <div key={item.id} className="mb-4 animate-fade-in">
             <Link to={`/content/${item.id}`}>
@@ -40,9 +48,25 @@ const ContentGrid: React.FC<ContentGridProps> = ({ content }) => {
                   className="w-full relative overflow-hidden transition-transform duration-300 group-hover:scale-105"
                   style={{
                     height: `${height}px`,
-                    background: item.thumbnail,
+                    background: isImage ? "none" : item.thumbnail, // Use gradient as background if not image
                   }}
                 >
+                  {/* Image Thumbnail */}
+                  {isImage && (
+                    <img
+                      src={thumbnailUrl}
+                      alt={item.title}
+                      className="w-full h-full object-cover"
+                      onError={(e) => {
+                        // Fallback to gradient if image fails to load
+                        const target = e.target as HTMLImageElement;
+                        target.style.display = "none";
+                        target.parentElement!.style.background =
+                          getFallbackGradient();
+                      }}
+                    />
+                  )}
+
                   {/* Media Count Indicator */}
                   <div className="absolute top-2 left-2 flex space-x-2 text-white">
                     {item.imageCount > 0 && (
@@ -59,7 +83,7 @@ const ContentGrid: React.FC<ContentGridProps> = ({ content }) => {
                     )}
                   </div>
                 </div>
-                
+
                 {/* Content Info */}
                 <div className="p-3 bg-dark-600">
                   <p className="text-sm line-clamp-2 font-medium">
