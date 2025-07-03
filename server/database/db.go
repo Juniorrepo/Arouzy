@@ -144,5 +144,37 @@ func initializeSchema(ctx context.Context, pool *pgxpool.Pool) error {
 		return fmt.Errorf("error creating follows table: %v", err)
 	}
 
+	// Create trading_content table
+	_, err = pool.Exec(ctx, `
+		CREATE TABLE IF NOT EXISTS trading_content (
+			id SERIAL PRIMARY KEY,
+			user_id INTEGER REFERENCES users(id),
+			title VARCHAR(255) NOT NULL,
+			description TEXT,
+			file_url VARCHAR(255) NOT NULL,
+			created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+			is_traded BOOLEAN DEFAULT FALSE
+		)
+	`)
+	if err != nil {
+		return fmt.Errorf("error creating trading_content table: %v", err)
+	}
+
+	// Create trade_requests table
+	_, err = pool.Exec(ctx, `
+		CREATE TABLE IF NOT EXISTS trade_requests (
+			id SERIAL PRIMARY KEY,
+			from_user_id INTEGER REFERENCES users(id),
+			to_user_id INTEGER REFERENCES users(id),
+			trading_content_id INTEGER REFERENCES trading_content(id),
+			offered_content_id INTEGER REFERENCES trading_content(id),
+			status VARCHAR(20) DEFAULT 'pending' CHECK (status IN ('pending', 'accepted', 'rejected')),
+			created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+		)
+	`)
+	if err != nil {
+		return fmt.Errorf("error creating trade_requests table: %v", err)
+	}
+
 	return nil
 }

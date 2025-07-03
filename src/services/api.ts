@@ -114,6 +114,32 @@ export const userService = {
   },
 };
 
+// Trading API services
+export const tradingService = {
+  uploadTradingContent: async (data: FormData) => {
+    return api.post("/api/trading/upload", data, {
+      headers: {
+        "Content-Type": "multipart/form-data",
+      },
+    });
+  },
+  listTradingContent: async () => {
+    return api.get("/api/trading");
+  },
+  sendTradeRequest: async (
+    tradingContentId: number,
+    offeredContentId: number
+  ) => {
+    return api.post("/api/trading/request", {
+      tradingContentId,
+      offeredContentId,
+    });
+  },
+  listMyTradingContent: async () => {
+    return api.get("/api/trading/mine");
+  },
+};
+
 // Types
 export interface CreateContentRequest {
   title: string;

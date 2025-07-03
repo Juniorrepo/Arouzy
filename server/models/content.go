@@ -50,3 +50,26 @@ type CreateContentResponse struct {
 	Title     string `json:"title"`
 	CreatedAt string `json:"createdAt"`
 }
+
+// TradingContent represents a private content item for trading
+// (blurred until trade is accepted)
+type TradingContent struct {
+	ID          int    `json:"id"`
+	UserID      int    `json:"userId"`
+	Title       string `json:"title"`
+	Description string `json:"description,omitempty"`
+	FileURL     string `json:"fileUrl"`
+	CreatedAt   string `json:"createdAt"`
+	IsTraded    bool   `json:"isTraded"`
+}
+
+// TradeRequest represents a trade offer between users
+type TradeRequest struct {
+	ID                int    `json:"id"`
+	FromUserID        int    `json:"fromUserId"`
+	ToUserID          int    `json:"toUserId"`
+	TradingContentID  int    `json:"tradingContentId"`
+	OfferedContentID  int    `json:"offeredContentId"`
+	Status            string `json:"status"` // pending, accepted, rejected
+	CreatedAt         string `json:"createdAt"`
+}

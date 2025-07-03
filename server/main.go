@@ -72,6 +72,16 @@ func main() {
 	// Serve uploaded files
 	router.PathPrefix("/uploads/").Handler(http.StripPrefix("/uploads/", http.FileServer(http.Dir("./uploads"))))
 
+	// Trading routes
+	tradingRouter := apiRouter.PathPrefix("/trading").Subrouter()
+	tradingRouter.HandleFunc("/upload", middleware.AuthMiddleware(handlers.UploadTradingContentHandler)).Methods("POST")
+	tradingRouter.HandleFunc("", handlers.ListTradingContentHandler).Methods("GET")
+	tradingRouter.HandleFunc("/mine", middleware.AuthMiddleware(handlers.ListMyTradingContentHandler)).Methods("GET")
+	tradingRouter.HandleFunc("/request", middleware.AuthMiddleware(handlers.SendTradeRequestHandler)).Methods("POST")
+	tradingRouter.HandleFunc("/requests", middleware.AuthMiddleware(handlers.ListTradeRequestsHandler)).Methods("GET")
+	tradingRouter.HandleFunc("/request/{id}/accept", middleware.AuthMiddleware(handlers.AcceptTradeRequestHandler)).Methods("POST")
+	tradingRouter.HandleFunc("/request/{id}/reject", middleware.AuthMiddleware(handlers.RejectTradeRequestHandler)).Methods("POST")
+
 	// Set up CORS
 	c := cors.New(cors.Options{
 		AllowedOrigins:   []string{"http://localhost:5173", "http://localhost:3000", "http://localhost:5174", "https://arouzy.up.railway.app", "https://arouzy.vercel.app"},
