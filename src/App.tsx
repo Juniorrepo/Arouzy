@@ -13,6 +13,8 @@ import Login from "./pages/Login";
 import NotFound from "./pages/NotFound";
 import Upload from "./pages/Upload";
 import ContentDetail from "./pages/ContentDetail";
+import Followers from "./pages/Followers";
+import Following from "./pages/Following";
 
 function App() {
   const { isAuthenticated } = useAuth();
@@ -46,6 +48,10 @@ function App() {
 
           {/* Content Detail Page */}
           <Route path="/content/:id" element={<ContentDetail />} />
+
+          {/* Followers/Following Pages */}
+          <Route path="/profile/:username/followers" element={<Followers />} />
+          <Route path="/profile/:username/following" element={<Following />} />
 
           {/* Not Found */}
           <Route path="*" element={<NotFound />} />

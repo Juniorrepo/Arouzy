@@ -315,3 +315,95 @@ func CheckFollowStatusHandler(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(map[string]bool{"isFollowing": exists})
 }
+
+// GetFollowersHandler returns a list of users who follow the given username
+func GetFollowersHandler(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	username := vars["username"]
+
+	ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
+	defer cancel()
+
+	// Find user ID
+	var userID int
+	err := database.DBPool.QueryRow(ctx, "SELECT id FROM users WHERE username = $1", username).Scan(&userID)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			http.Error(w, "User not found", http.StatusNotFound)
+		} else {
+			http.Error(w, "Database error", http.StatusInternalServerError)
+		}
+		return
+	}
+
+	rows, err := database.DBPool.Query(ctx, `
+		SELECT u.id, u.username, u.email
+		FROM follows f
+		JOIN users u ON f.follower_id = u.id
+		WHERE f.following_id = $1
+	`, userID)
+	if err != nil {
+		http.Error(w, "Database error", http.StatusInternalServerError)
+		return
+	}
+	defer rows.Close()
+
+	followers := []models.User{}
+	for rows.Next() {
+		var user models.User
+		if err := rows.Scan(&user.ID, &user.Username, &user.Email); err != nil {
+			http.Error(w, "Error parsing followers", http.StatusInternalServerError)
+			return
+		}
+		followers = append(followers, user)
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(followers)
+}
+
+// GetFollowingHandler returns a list of users the given username is following
+func GetFollowingHandler(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	username := vars["username"]
+
+	ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
+	defer cancel()
+
+	// Find user ID
+	var userID int
+	err := database.DBPool.QueryRow(ctx, "SELECT id FROM users WHERE username = $1", username).Scan(&userID)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			http.Error(w, "User not found", http.StatusNotFound)
+		} else {
+			http.Error(w, "Database error", http.StatusInternalServerError)
+		}
+		return
+	}
+
+	rows, err := database.DBPool.Query(ctx, `
+		SELECT u.id, u.username, u.email
+		FROM follows f
+		JOIN users u ON f.following_id = u.id
+		WHERE f.follower_id = $1
+	`, userID)
+	if err != nil {
+		http.Error(w, "Database error", http.StatusInternalServerError)
+		return
+	}
+	defer rows.Close()
+
+	following := []models.User{}
+	for rows.Next() {
+		var user models.User
+		if err := rows.Scan(&user.ID, &user.Username, &user.Email); err != nil {
+			http.Error(w, "Error parsing following", http.StatusInternalServerError)
+			return
+		}
+		following = append(following, user)
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(following)
+}

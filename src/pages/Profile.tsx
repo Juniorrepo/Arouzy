@@ -1,9 +1,9 @@
-import React, { useState, useEffect } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
-import ContentGrid from '../components/Content/ContentGrid';
-import Pagination from '../components/Content/Pagination';
-import { contentService, userService } from '../services/api';
-import { useAuth } from '../contexts/AuthContext';
+import React, { useState, useEffect } from "react";
+import { useParams, useNavigate, Link } from "react-router-dom";
+import ContentGrid from "../components/Content/ContentGrid";
+import Pagination from "../components/Content/Pagination";
+import { contentService, userService } from "../services/api";
+import { useAuth } from "../contexts/AuthContext";
 
 interface ContentItem {
   id: number;
@@ -33,7 +33,9 @@ const Profile: React.FC = () => {
 
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [isLoadingProfile, setIsLoadingProfile] = useState(true);
-  const [activeTab, setActiveTab] = useState<'content' | 'collections'>('content');
+  const [activeTab, setActiveTab] = useState<"content" | "collections">(
+    "content"
+  );
 
   const [content, setContent] = useState<ContentItem[]>([]);
   const [collections, setCollections] = useState<ContentItem[]>([]);
@@ -53,18 +55,18 @@ const Profile: React.FC = () => {
       try {
         const response = await userService.getPublicUserProfile(username!);
         setProfile(response.data);
-        
+
         // Check follow status if user is authenticated and not viewing their own profile
         if (currentUser && currentUser.username !== username) {
           try {
             const followStatus = await userService.checkFollowStatus(username!);
             setIsFollowing(followStatus.data.isFollowing);
           } catch (error) {
-            console.error('Error checking follow status:', error);
+            console.error("Error checking follow status:", error);
           }
         }
       } catch (error) {
-        console.error('Error fetching profile:', error);
+        console.error("Error fetching profile:", error);
       } finally {
         setIsLoadingProfile(false);
       }
@@ -77,11 +79,15 @@ const Profile: React.FC = () => {
     const fetchUserContent = async () => {
       setIsLoadingContent(true);
       try {
-        const response = await contentService.getContentByUser(username!, pageContent, 'hot');
+        const response = await contentService.getContentByUser(
+          username!,
+          pageContent,
+          "hot"
+        );
         setContent(response.data.content);
         setTotalPagesContent(response.data.pagination.totalPages);
       } catch (error) {
-        console.error('Error fetching user content:', error);
+        console.error("Error fetching user content:", error);
       } finally {
         setIsLoadingContent(false);
       }
@@ -94,11 +100,15 @@ const Profile: React.FC = () => {
     const fetchUserCollections = async () => {
       setIsLoadingCollections(true);
       try {
-        const response = await contentService.getCollectionsByUser(profile.user.id, pageCollections, 'hot');
+        const response = await contentService.getCollectionsByUser(
+          profile.user.id,
+          pageCollections,
+          "hot"
+        );
         setCollections(response.data.content);
         setTotalPagesCollections(response.data.pagination.totalPages);
       } catch (error) {
-        console.error('Error fetching user collections:', error);
+        console.error("Error fetching user collections:", error);
       } finally {
         setIsLoadingCollections(false);
       }
@@ -113,27 +123,35 @@ const Profile: React.FC = () => {
         await userService.unfollowUser(profile.user.username);
         setIsFollowing(false);
         // Update follower count
-        setProfile(prev => prev ? {
-          ...prev,
-          followerCount: prev.followerCount - 1
-        } : null);
+        setProfile((prev) =>
+          prev
+            ? {
+                ...prev,
+                followerCount: prev.followerCount - 1,
+              }
+            : null
+        );
       } else {
         await userService.followUser(profile.user.username);
         setIsFollowing(true);
         // Update follower count
-        setProfile(prev => prev ? {
-          ...prev,
-          followerCount: prev.followerCount + 1
-        } : null);
+        setProfile((prev) =>
+          prev
+            ? {
+                ...prev,
+                followerCount: prev.followerCount + 1,
+              }
+            : null
+        );
       }
     } catch (error) {
-      console.error('Error following/unfollowing user:', error);
+      console.error("Error following/unfollowing user:", error);
     }
   };
 
   const handleMessage = () => {
     if (!isAuthenticated) {
-      navigate('/login');
+      navigate("/login");
       return;
     }
     if (profile) {
@@ -153,9 +171,25 @@ const Profile: React.FC = () => {
     <div className="max-w-4xl mx-auto px-4 py-6">
       <div className="flex flex-col items-center">
         <div className="w-32 h-32 rounded-full bg-gray-500 mb-4" />
-        <h1 className="text-xl font-semibold text-primary-500">{profile.user.username}</h1>
+        <h1 className="text-xl font-semibold text-primary-500">
+          {profile.user.username}
+        </h1>
         <p className="text-gray-400 mt-2">
-          {profile.followerCount} followers &middot; {profile.upvotesGiven} likes
+          <Link
+            to={`/profile/${profile.user.username}/followers`}
+            className="hover:underline text-primary-400"
+          >
+            {profile.followerCount} followers
+          </Link>
+          &nbsp;&middot;&nbsp;
+          <Link
+            to={`/profile/${profile.user.username}/following`}
+            className="hover:underline text-primary-400"
+          >
+            Following
+          </Link>
+          &nbsp;&middot;&nbsp;
+          {profile.upvotesGiven} likes
         </p>
         {currentUser && currentUser.username !== profile.user.username && (
           <div className="flex space-x-4 mt-4">
@@ -163,7 +197,7 @@ const Profile: React.FC = () => {
               className="px-4 py-2 bg-primary-500 text-white rounded-full hover:bg-primary-600"
               onClick={handleFollow}
             >
-              {isFollowing ? 'Unfollow' : 'Follow'}
+              {isFollowing ? "Unfollow" : "Follow"}
             </button>
             <button
               className="px-4 py-2 bg-primary-500 text-white rounded-full hover:bg-primary-600"
@@ -176,28 +210,28 @@ const Profile: React.FC = () => {
         <div className="flex space-x-8 mt-6 border-b border-gray-700">
           <button
             className={`pb-2 ${
-              activeTab === 'content'
-                ? 'border-b-2 border-primary-500 text-primary-500'
-                : 'text-gray-400'
+              activeTab === "content"
+                ? "border-b-2 border-primary-500 text-primary-500"
+                : "text-gray-400"
             }`}
-            onClick={() => setActiveTab('content')}
+            onClick={() => setActiveTab("content")}
           >
             Content
           </button>
           <button
             className={`pb-2 ${
-              activeTab === 'collections'
-                ? 'border-b-2 border-primary-500 text-primary-500'
-                : 'text-gray-400'
+              activeTab === "collections"
+                ? "border-b-2 border-primary-500 text-primary-500"
+                : "text-gray-400"
             }`}
-            onClick={() => setActiveTab('collections')}
+            onClick={() => setActiveTab("collections")}
           >
             Collections
           </button>
         </div>
       </div>
       <div className="mt-6">
-        {activeTab === 'content' ? (
+        {activeTab === "content" ? (
           isLoadingContent ? (
             <div className="mt-8 flex justify-center">Loading content...</div>
           ) : (
@@ -208,7 +242,7 @@ const Profile: React.FC = () => {
                 totalPages={totalPagesContent}
                 onPageChange={(p) => {
                   setPageContent(p);
-                  window.scrollTo({ top: 0, behavior: 'smooth' });
+                  window.scrollTo({ top: 0, behavior: "smooth" });
                 }}
               />
             </>
@@ -223,7 +257,7 @@ const Profile: React.FC = () => {
               totalPages={totalPagesCollections}
               onPageChange={(p) => {
                 setPageCollections(p);
-                window.scrollTo({ top: 0, behavior: 'smooth' });
+                window.scrollTo({ top: 0, behavior: "smooth" });
               }}
             />
           </>
@@ -233,4 +267,4 @@ const Profile: React.FC = () => {
   );
 };
 
-export default Profile; 
+export default Profile;

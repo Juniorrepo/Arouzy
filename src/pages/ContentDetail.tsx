@@ -286,7 +286,7 @@ const ContentDetail: React.FC = () => {
                   <span className="text-sm">
                     by{" "}
                     <Link
-                      to={`/user/${content.user.username}`}
+                      to={`/profile/${content.user.username}`}
                       className="text-primary-400 hover:text-primary-300 transition-colors"
                     >
                       {content.user.username}

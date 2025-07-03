@@ -106,6 +106,12 @@ export const userService = {
   checkFollowStatus: async (username: string) => {
     return api.get(`/api/users/${username}/follow/status`);
   },
+  getFollowers: async (username: string) => {
+    return api.get(`/api/users/${username}/followers`);
+  },
+  getFollowing: async (username: string) => {
+    return api.get(`/api/users/${username}/following`);
+  },
 };
 
 // Types

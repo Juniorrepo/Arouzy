@@ -46,6 +46,8 @@ func main() {
 	usersRouter.HandleFunc("/{username}/follow", middleware.AuthMiddleware(handlers.FollowUserHandler)).Methods("POST")
 	usersRouter.HandleFunc("/{username}/follow", middleware.AuthMiddleware(handlers.UnfollowUserHandler)).Methods("DELETE")
 	usersRouter.HandleFunc("/{username}/follow/status", middleware.AuthMiddleware(handlers.CheckFollowStatusHandler)).Methods("GET")
+	usersRouter.HandleFunc("/{username}/followers", handlers.GetFollowersHandler).Methods("GET")
+	usersRouter.HandleFunc("/{username}/following", handlers.GetFollowingHandler).Methods("GET")
 
 	// Auth routes
 	authRouter := apiRouter.PathPrefix("/auth").Subrouter()
