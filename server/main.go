@@ -64,8 +64,9 @@ func main() {
 	userRouter.HandleFunc("/profile", middleware.AuthMiddleware(handlers.GetUserProfileHandler)).Methods("GET")
 	userRouter.HandleFunc("/profile", middleware.AuthMiddleware(handlers.UpdateUserProfileHandler)).Methods("PUT")
 
-	// File upload route
+	// File upload routes
 	apiRouter.HandleFunc("/upload", handlers.UploadHandler).Methods("POST", "OPTIONS")
+	apiRouter.HandleFunc("/upload/multiple", handlers.MultipleUploadHandler).Methods("POST", "OPTIONS")
 	// Serve uploaded files
 	router.PathPrefix("/uploads/").Handler(http.StripPrefix("/uploads/", http.FileServer(http.Dir("./uploads"))))
 
