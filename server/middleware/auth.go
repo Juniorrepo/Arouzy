@@ -49,3 +49,27 @@ func AuthMiddleware(next http.HandlerFunc) http.HandlerFunc {
 		next(w, r.WithContext(ctx))
 	}
 }
+
+// OptionalAuthMiddleware sets user context if token is present and valid, but does not require authentication
+func OptionalAuthMiddleware(next http.HandlerFunc) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		authHeader := r.Header.Get("Authorization")
+		if authHeader != "" {
+			tokenParts := strings.Split(authHeader, " ")
+			if len(tokenParts) == 2 && tokenParts[0] == "Bearer" {
+				tokenString := tokenParts[1]
+				claims, err := utils.ValidateJWT(tokenString)
+				if err == nil {
+					user := models.User{
+						ID:       claims.UserID,
+						Username: claims.Username,
+						Email:    claims.Email,
+					}
+					ctx := context.WithValue(r.Context(), models.UserContextKey, user)
+					r = r.WithContext(ctx)
+				}
+			}
+		}
+		next(w, r)
+	}
+}

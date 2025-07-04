@@ -73,3 +73,42 @@ type TradeRequest struct {
 	Status            string `json:"status"` // pending, accepted, rejected
 	CreatedAt         string `json:"createdAt"`
 }
+
+// Collection represents a user's content collection (like YouTube playlist)
+type Collection struct {
+	ID          int    `json:"id"`
+	UserID      int    `json:"userId"`
+	Name        string `json:"name"`
+	Description string `json:"description,omitempty"`
+	IsPublic    bool   `json:"isPublic"`
+	ContentCount int   `json:"contentCount"`
+	CreatedAt   string `json:"createdAt"`
+	UpdatedAt   string `json:"updatedAt"`
+}
+
+// CollectionContent represents content saved to a collection
+type CollectionContent struct {
+	ID           int    `json:"id"`
+	CollectionID int    `json:"collectionId"`
+	ContentID    int    `json:"contentId"`
+	AddedAt      string `json:"addedAt"`
+}
+
+// CreateCollectionRequest represents the request to create a new collection
+type CreateCollectionRequest struct {
+	Name        string `json:"name"`
+	Description string `json:"description,omitempty"`
+	IsPublic    bool   `json:"isPublic"`
+}
+
+// SaveToCollectionRequest represents the request to save content to a collection
+type SaveToCollectionRequest struct {
+	CollectionID int `json:"collectionId"`
+	ContentID    int `json:"contentId"`
+}
+
+// CollectionResponse represents the API response for collection listings
+type CollectionResponse struct {
+	Collections []Collection `json:"collections"`
+	Pagination  Pagination   `json:"pagination"`
+}

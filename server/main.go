@@ -85,6 +85,18 @@ func main() {
 	// Debug route (remove in production)
 	tradingRouter.HandleFunc("/debug/requests", handlers.DebugTradeRequestsHandler).Methods("GET")
 
+	// Collections routes
+	collectionsRouter := apiRouter.PathPrefix("/collections").Subrouter()
+	collectionsRouter.HandleFunc("", middleware.AuthMiddleware(handlers.CreateCollectionHandler)).Methods("POST")
+	collectionsRouter.HandleFunc("/my", middleware.AuthMiddleware(handlers.ListMyCollectionsHandler)).Methods("GET")
+	collectionsRouter.HandleFunc("/public", handlers.ListPublicCollectionsHandler).Methods("GET")
+	collectionsRouter.HandleFunc("/content", middleware.OptionalAuthMiddleware(handlers.GetCollectionContentHandler)).Methods("GET")
+	collectionsRouter.HandleFunc("/save", middleware.AuthMiddleware(handlers.SaveToCollectionHandler)).Methods("POST")
+	collectionsRouter.HandleFunc("/remove", middleware.AuthMiddleware(handlers.RemoveFromCollectionHandler)).Methods("DELETE")
+	collectionsRouter.HandleFunc("/update", middleware.AuthMiddleware(handlers.UpdateCollectionHandler)).Methods("PUT")
+	collectionsRouter.HandleFunc("/delete", middleware.AuthMiddleware(handlers.DeleteCollectionHandler)).Methods("DELETE")
+	collectionsRouter.HandleFunc("/detail/{id}", middleware.OptionalAuthMiddleware(handlers.GetCollectionHandler)).Methods("GET")
+
 	// Set up CORS
 	c := cors.New(cors.Options{
 		AllowedOrigins:   []string{"http://localhost:5173", "http://localhost:3000", "http://localhost:5174", "https://arouzy.up.railway.app", "https://arouzy.vercel.app"},

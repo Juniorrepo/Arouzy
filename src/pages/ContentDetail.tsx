@@ -12,7 +12,6 @@ import {
   Clock,
   Eye,
   MessageCircle,
-  Bookmark,
 } from "lucide-react";
 import { contentService } from "../services/api";
 import {
@@ -20,6 +19,7 @@ import {
   isImageUrl,
   getFallbackGradient,
 } from "../utils/imageUtils";
+import SaveButton from "../components/Content/SaveButton";
 
 interface ContentDetail {
   id: number;
@@ -47,7 +47,7 @@ const ContentDetail: React.FC = () => {
   const [content, setContent] = useState<ContentDetail | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [isUpvoted, setIsUpvoted] = useState(false);
+  const [isUpvoted, setIsUpvoted] = useState<boolean>(false);
 
   useEffect(() => {
     if (id) {
@@ -183,9 +183,7 @@ const ContentDetail: React.FC = () => {
                 <Share2 className="w-5 h-5 mr-2" />
                 Share
               </button>
-              <button className="flex items-center text-gray-400 hover:text-white transition-colors">
-                <Bookmark className="w-5 h-5" />
-              </button>
+              {content && <SaveButton contentId={content.id} />}
             </div>
           </div>
         </div>

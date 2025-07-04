@@ -149,6 +149,51 @@ export const tradingService = {
   },
 };
 
+// Collections API services
+export const collectionService = {
+  createCollection: async (data: {
+    name: string;
+    description?: string;
+    isPublic: boolean;
+  }) => {
+    return api.post("/api/collections", data);
+  },
+  listMyCollections: async () => {
+    return api.get("/api/collections/my");
+  },
+  listPublicCollections: async (username: string) => {
+    return api.get(
+      `/api/collections/public?username=${encodeURIComponent(username)}`
+    );
+  },
+  getCollectionContent: async (collectionId: number) => {
+    return api.get(`/api/collections/content?collectionId=${collectionId}`);
+  },
+  getCollectionById: async (collectionId: number) => {
+    return api.get(`/api/collections/detail/${collectionId}`);
+  },
+  saveToCollection: async (collectionId: number, contentId: number) => {
+    return api.post("/api/collections/save", { collectionId, contentId });
+  },
+  removeFromCollection: async (collectionId: number, contentId: number) => {
+    return api.delete(
+      `/api/collections/remove?collectionId=${collectionId}&contentId=${contentId}`
+    );
+  },
+  updateCollection: async (
+    collectionId: number,
+    data: { name: string; description?: string; isPublic: boolean }
+  ) => {
+    return api.put(
+      `/api/collections/update?collectionId=${collectionId}`,
+      data
+    );
+  },
+  deleteCollection: async (collectionId: number) => {
+    return api.delete(`/api/collections/delete?collectionId=${collectionId}`);
+  },
+};
+
 // Types
 export interface CreateContentRequest {
   title: string;
@@ -162,4 +207,22 @@ export interface CreateContentRequest {
 export interface UploadResponse {
   filename: string;
   url: string;
+}
+
+export interface Collection {
+  id: number;
+  userId: number;
+  name: string;
+  description?: string;
+  isPublic: boolean;
+  contentCount: number;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface CollectionContent {
+  id: number;
+  collectionId: number;
+  contentId: number;
+  addedAt: string;
 }

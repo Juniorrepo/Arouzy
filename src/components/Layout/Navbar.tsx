@@ -138,6 +138,13 @@ const Navbar: React.FC = () => {
                     Profile
                   </Link>
                   <Link
+                    to={`/collections`}
+                    className="block px-4 py-2 text-sm text-white hover:bg-dark-700"
+                    onClick={() => setIsProfileMenuOpen(false)}
+                  >
+                    Collections
+                  </Link>
+                  <Link
                     to={`/upload`}
                     className="block px-4 py-2 text-sm text-white hover:bg-dark-700"
                     onClick={() => setIsProfileMenuOpen(false)}
@@ -262,6 +269,13 @@ const Navbar: React.FC = () => {
                   onClick={() => setIsMenuOpen(false)}
                 >
                   Profile
+                </Link>
+                <Link
+                  to={`/collections`}
+                  className="text-white hover:text-primary-300 transition-colors py-2"
+                  onClick={() => setIsMenuOpen(false)}
+                >
+                  Collections
                 </Link>
                 <button
                   onClick={() => {

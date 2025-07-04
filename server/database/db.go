@@ -176,5 +176,35 @@ func initializeSchema(ctx context.Context, pool *pgxpool.Pool) error {
 		return fmt.Errorf("error creating trade_requests table: %v", err)
 	}
 
+	// Create collections table
+	_, err = pool.Exec(ctx, `
+		CREATE TABLE IF NOT EXISTS collections (
+			id SERIAL PRIMARY KEY,
+			user_id INTEGER REFERENCES users(id),
+			name VARCHAR(255) NOT NULL,
+			description TEXT,
+			is_public BOOLEAN DEFAULT FALSE,
+			created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+			updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+		)
+	`)
+	if err != nil {
+		return fmt.Errorf("error creating collections table: %v", err)
+	}
+
+	// Create collection_content junction table
+	_, err = pool.Exec(ctx, `
+		CREATE TABLE IF NOT EXISTS collection_content (
+			id SERIAL PRIMARY KEY,
+			collection_id INTEGER REFERENCES collections(id) ON DELETE CASCADE,
+			content_id INTEGER REFERENCES content(id) ON DELETE CASCADE,
+			added_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+			UNIQUE(collection_id, content_id)
+		)
+	`)
+	if err != nil {
+		return fmt.Errorf("error creating collection_content table: %v", err)
+	}
+
 	return nil
 }

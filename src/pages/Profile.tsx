@@ -2,7 +2,12 @@ import React, { useState, useEffect } from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
 import ContentGrid from "../components/Content/ContentGrid";
 import Pagination from "../components/Content/Pagination";
-import { contentService, userService } from "../services/api";
+import {
+  contentService,
+  userService,
+  collectionService,
+  Collection,
+} from "../services/api";
 import { useAuth } from "../contexts/AuthContext";
 
 interface ContentItem {
@@ -38,14 +43,12 @@ const Profile: React.FC = () => {
   );
 
   const [content, setContent] = useState<ContentItem[]>([]);
-  const [collections, setCollections] = useState<ContentItem[]>([]);
+  const [collections, setCollections] = useState<Collection[]>([]);
   const [isLoadingContent, setIsLoadingContent] = useState(false);
   const [isLoadingCollections, setIsLoadingCollections] = useState(false);
 
   const [pageContent, setPageContent] = useState(1);
   const [totalPagesContent, setTotalPagesContent] = useState(1);
-  const [pageCollections, setPageCollections] = useState(1);
-  const [totalPagesCollections, setTotalPagesCollections] = useState(1);
 
   const [isFollowing, setIsFollowing] = useState(false);
 
@@ -100,13 +103,14 @@ const Profile: React.FC = () => {
     const fetchUserCollections = async () => {
       setIsLoadingCollections(true);
       try {
-        const response = await contentService.getCollectionsByUser(
-          profile.user.id,
-          pageCollections,
-          "hot"
-        );
-        setCollections(response.data.content);
-        setTotalPagesCollections(response.data.pagination.totalPages);
+        let response;
+        // Check if the logged-in user is viewing their own profile
+        if (currentUser && currentUser.username === username) {
+          response = await collectionService.listMyCollections();
+        } else {
+          response = await collectionService.listPublicCollections(username!);
+        }
+        setCollections(response.data);
       } catch (error) {
         console.error("Error fetching user collections:", error);
       } finally {
@@ -114,7 +118,7 @@ const Profile: React.FC = () => {
       }
     };
     fetchUserCollections();
-  }, [profile, pageCollections]);
+  }, [profile, username, currentUser]);
 
   const handleFollow = async () => {
     if (!profile) return;
@@ -250,17 +254,51 @@ const Profile: React.FC = () => {
         ) : isLoadingCollections ? (
           <div className="mt-8 flex justify-center">Loading collections...</div>
         ) : (
-          <>
-            <ContentGrid content={collections} />
-            <Pagination
-              currentPage={pageCollections}
-              totalPages={totalPagesCollections}
-              onPageChange={(p) => {
-                setPageCollections(p);
-                window.scrollTo({ top: 0, behavior: "smooth" });
-              }}
-            />
-          </>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {collections?.map((collection) => (
+              <div
+                key={collection.id}
+                className="bg-dark-800 rounded-xl overflow-hidden hover:shadow-lg transition-shadow"
+              >
+                <div className="p-6">
+                  <div className="flex items-center space-x-2 mb-2">
+                    <h3 className="text-xl font-semibold text-white truncate">
+                      {collection.name}
+                    </h3>
+                    {collection.isPublic ? (
+                      <span className="text-xs bg-green-600 text-white px-2 py-1 rounded">
+                        Public
+                      </span>
+                    ) : (
+                      <span className="text-xs bg-gray-600 text-white px-2 py-1 rounded">
+                        Private
+                      </span>
+                    )}
+                  </div>
+                  {collection.description && (
+                    <p className="text-gray-400 text-sm mb-3 line-clamp-2">
+                      {collection.description}
+                    </p>
+                  )}
+                  <div className="flex items-center justify-between text-sm text-gray-400 mb-4">
+                    <span>
+                      {collection.contentCount} item
+                      {collection.contentCount !== 1 ? "s" : ""}
+                    </span>
+                    <span>
+                      {new Date(collection.updatedAt).toLocaleDateString()}
+                    </span>
+                  </div>
+                  <Link
+                    to={`/collections/${collection.id}`}
+                    className="w-full flex items-center justify-center space-x-2 px-3 py-2 bg-primary-600 hover:bg-primary-700 text-white rounded-lg transition-colors text-sm"
+                  >
+                    View Collection
+                  </Link>
+                </div>
+              </div>
+            ))}
+          </div>
         )}
       </div>
     </div>

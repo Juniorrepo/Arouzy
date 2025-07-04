@@ -19,6 +19,8 @@ import Following from "./pages/Following";
 import TradingUpload from "./pages/TradingUpload";
 import TradingPage from "./pages/TradingPage";
 import TradeRequests from "./pages/TradeRequests";
+import Collections from "./pages/Collections";
+import CollectionDetail from "./pages/CollectionDetail";
 
 function App() {
   const { isAuthenticated } = useAuth();
@@ -89,6 +91,13 @@ function App() {
 
           {/* Trade Requests Page */}
           <Route path="/trading/requests" element={<TradeRequests />} />
+
+          {/* Collections Pages */}
+          <Route
+            path="/collections"
+            element={<Collections isOwnProfile={true} />}
+          />
+          <Route path="/collections/:id" element={<CollectionDetail />} />
 
           {/* Not Found */}
           <Route path="*" element={<NotFound />} />
