@@ -75,12 +75,15 @@ func main() {
 	// Trading routes
 	tradingRouter := apiRouter.PathPrefix("/trading").Subrouter()
 	tradingRouter.HandleFunc("/upload", middleware.AuthMiddleware(handlers.UploadTradingContentHandler)).Methods("POST")
-	tradingRouter.HandleFunc("", handlers.ListTradingContentHandler).Methods("GET")
+	tradingRouter.HandleFunc("", middleware.AuthMiddleware(handlers.ListTradingContentHandler)).Methods("GET")
 	tradingRouter.HandleFunc("/mine", middleware.AuthMiddleware(handlers.ListMyTradingContentHandler)).Methods("GET")
 	tradingRouter.HandleFunc("/request", middleware.AuthMiddleware(handlers.SendTradeRequestHandler)).Methods("POST")
 	tradingRouter.HandleFunc("/requests", middleware.AuthMiddleware(handlers.ListTradeRequestsHandler)).Methods("GET")
 	tradingRouter.HandleFunc("/request/{id}/accept", middleware.AuthMiddleware(handlers.AcceptTradeRequestHandler)).Methods("POST")
 	tradingRouter.HandleFunc("/request/{id}/reject", middleware.AuthMiddleware(handlers.RejectTradeRequestHandler)).Methods("POST")
+	
+	// Debug route (remove in production)
+	tradingRouter.HandleFunc("/debug/requests", handlers.DebugTradeRequestsHandler).Methods("GET")
 
 	// Set up CORS
 	c := cors.New(cors.Options{

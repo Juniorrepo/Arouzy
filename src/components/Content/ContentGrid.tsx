@@ -6,7 +6,7 @@ import { Image, Film } from "lucide-react";
 import {
   getThumbnailUrl,
   isImageUrl,
-  // getFallbackGradient,
+  getFallbackGradient,
 } from "../../utils/imageUtils";
 
 interface ContentGridProps {
@@ -60,12 +60,12 @@ const ContentGrid: React.FC<ContentGridProps> = ({ content }) => {
                       src={thumbnailUrl}
                       alt={item.title}
                       className="w-full h-full object-cover"
-                      // onError={(e) => {
-                      //   const target = e.target as HTMLImageElement;
-                      //   target.style.display = "none";
-                      //   target.parentElement!.style.background =
-                      //     getFallbackGradient();
-                      // }}
+                      onError={(e) => {
+                        const target = e.target as HTMLImageElement;
+                        target.style.display = "none";
+                        target.parentElement!.style.background =
+                          getFallbackGradient();
+                      }}
                     />
                   )}
 

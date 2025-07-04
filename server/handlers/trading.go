@@ -114,11 +114,13 @@ func UploadTradingContentHandler(w http.ResponseWriter, r *http.Request) {
 
 // ListTradingContentHandler lists all trading content (blurred for non-owners)
 func ListTradingContentHandler(w http.ResponseWriter, r *http.Request) {
-	var userID int
 	user, ok := r.Context().Value(models.UserContextKey).(models.User)
-	if ok {
-		userID = user.ID
+	if !ok {
+		http.Error(w, "User not found in context", http.StatusUnauthorized)
+		return
 	}
+	
+	userID := user.ID
 	log.Printf("[DEBUG] ListTradingContentHandler: userID=%d", userID)
 
 	ctx, cancel := context.WithTimeout(r.Context(), 10*time.Second)
@@ -160,19 +162,23 @@ func ListTradingContentHandler(w http.ResponseWriter, r *http.Request) {
 		item.CreatedAt = createdAt.Format(time.RFC3339)
 
 		hasAccess := false
-		if userID != 0 && userID == item.UserID {
+		if userID == item.UserID {
+			// User is the owner of the content
 			hasAccess = true
 			log.Printf("[DEBUG] User %d is owner of content %d", userID, item.ID)
-		} else if userID != 0 {
-			// Check if user has accepted trade for this content as requester
+		} else {
+			// Check if user has access through accepted trade requests
+			// Either as requester (from_user_id) or as recipient (to_user_id)
 			var count int
 			err := database.DBPool.QueryRow(ctx, `
 				SELECT COUNT(*) FROM trade_requests
-				WHERE trading_content_id = $1 AND from_user_id = $2 AND status = 'accepted'
+				WHERE trading_content_id = $1 
+				AND ((from_user_id = $2 AND status = 'accepted') OR (to_user_id = $2 AND status = 'accepted'))
 			`, item.ID, userID).Scan(&count)
-			log.Printf("[DEBUG] User %d accepted trade count for content %d: %d", userID, item.ID, count)
+			log.Printf("[DEBUG] User %d access check for content %d: count=%d", userID, item.ID, count)
 			if err == nil && count > 0 {
 				hasAccess = true
+				log.Printf("[DEBUG] User %d has access to content %d through trade", userID, item.ID)
 			}
 		}
 		tradingContent = append(tradingContent, TradingContentWithAccess{
@@ -355,16 +361,35 @@ func AcceptTradeRequestHandler(w http.ResponseWriter, r *http.Request) {
 	defer cancel()
 
 	log.Printf("[DEBUG] AcceptTradeRequestHandler: userID=%d accepting tradeRequestID=%d", user.ID, id)
+	
+	// First, let's check what trade request we're trying to accept
+	var fromUserID, toUserID, tradingContentID, offeredContentID int
+	var status string
+	err = database.DBPool.QueryRow(ctx, `
+		SELECT from_user_id, to_user_id, trading_content_id, offered_content_id, status
+		FROM trade_requests WHERE id = $1
+	`, id).Scan(&fromUserID, &toUserID, &tradingContentID, &offeredContentID, &status)
+	if err != nil {
+		log.Printf("[DEBUG] Trade request %d not found: %v", id, err)
+		http.Error(w, "Trade request not found", http.StatusNotFound)
+		return
+	}
+	
+	log.Printf("[DEBUG] Trade request %d: from_user_id=%d, to_user_id=%d, trading_content_id=%d, offered_content_id=%d, status=%s", 
+		id, fromUserID, toUserID, tradingContentID, offeredContentID, status)
+	
 	// Only allow if user is the to_user_id and request is pending
 	res, err := database.DBPool.Exec(ctx, `
 		UPDATE trade_requests SET status = 'accepted'
 		WHERE id = $1 AND to_user_id = $2 AND status = 'pending'
 	`, id, user.ID)
 	if err != nil {
+		log.Printf("[DEBUG] Database error updating trade request: %v", err)
 		http.Error(w, "Database error", http.StatusInternalServerError)
 		return
 	}
 	if res.RowsAffected() == 0 {
+		log.Printf("[DEBUG] No rows affected - user %d cannot accept trade request %d", user.ID, id)
 		http.Error(w, "Trade request not found or not allowed", http.StatusForbidden)
 		return
 	}
@@ -402,4 +427,48 @@ func PrintAllTradeRequests() {
 		}
 		fmt.Printf("id=%d, from_user_id=%d, to_user_id=%d, trading_content_id=%d, offered_content_id=%d, status=%s, created_at=%s\n", id, fromUser, toUser, tradingContent, offeredContent, status, createdAt)
 	}
+}
+
+// DebugTradeRequestsHandler - HTTP endpoint for debugging trade requests
+func DebugTradeRequestsHandler(w http.ResponseWriter, r *http.Request) {
+	ctx, cancel := context.WithTimeout(r.Context(), 10*time.Second)
+	defer cancel()
+	
+	rows, err := database.DBPool.Query(ctx, `
+		SELECT tr.id, tr.from_user_id, tr.to_user_id, tr.trading_content_id, tr.offered_content_id, tr.status, tr.created_at,
+		       tc1.title as trading_content_title, tc2.title as offered_content_title
+		FROM trade_requests tr
+		LEFT JOIN trading_content tc1 ON tr.trading_content_id = tc1.id
+		LEFT JOIN trading_content tc2 ON tr.offered_content_id = tc2.id
+		ORDER BY tr.id
+	`)
+	if err != nil {
+		http.Error(w, "Database error", http.StatusInternalServerError)
+		return
+	}
+	defer rows.Close()
+	
+	var requests []map[string]interface{}
+	for rows.Next() {
+		var id, fromUser, toUser, tradingContent, offeredContent int
+		var status, createdAt, tradingTitle, offeredTitle string
+		err := rows.Scan(&id, &fromUser, &toUser, &tradingContent, &offeredContent, &status, &createdAt, &tradingTitle, &offeredTitle)
+		if err != nil {
+			continue
+		}
+		requests = append(requests, map[string]interface{}{
+			"id": id,
+			"from_user_id": fromUser,
+			"to_user_id": toUser,
+			"trading_content_id": tradingContent,
+			"offered_content_id": offeredContent,
+			"status": status,
+			"created_at": createdAt,
+			"trading_content_title": tradingTitle,
+			"offered_content_title": offeredTitle,
+		})
+	}
+	
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(requests)
 } 

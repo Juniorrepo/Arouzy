@@ -187,7 +187,7 @@ const TradingPage: React.FC = () => {
               <div className="text-green-500 mb-2">Trade request sent!</div>
             )}
             <div className="mb-4 max-h-48 overflow-y-auto">
-              {myTradingContent.length === 0 ? (
+              {myTradingContent?.length === 0 ? (
                 <div className="text-gray-400 text-sm">
                   You have no trading content to offer.{" "}
                   <Link
@@ -200,7 +200,7 @@ const TradingPage: React.FC = () => {
                 </div>
               ) : (
                 <ul>
-                  {myTradingContent.map((content) => (
+                  {myTradingContent?.map((content) => (
                     <li key={content.id} className="flex items-center mb-2">
                       <input
                         type="radio"
