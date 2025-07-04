@@ -206,9 +206,15 @@ func initializeSchema(ctx context.Context, pool *pgxpool.Pool) error {
 		return fmt.Errorf("error creating collection_content table: %v", err)
 	}
 
-	// Create messages table
+	// Fix messages table - drop and recreate if it exists with wrong schema
+	_, err = pool.Exec(ctx, `DROP TABLE IF EXISTS messages CASCADE`)
+	if err != nil {
+		return fmt.Errorf("error dropping messages table: %v", err)
+	}
+
+	// Create messages table with correct schema
 	_, err = pool.Exec(ctx, `
-		CREATE TABLE IF NOT EXISTS messages (
+		CREATE TABLE messages (
 			id SERIAL PRIMARY KEY,
 			from_user_id INTEGER REFERENCES users(id),
 			to_user_id INTEGER REFERENCES users(id),
