@@ -4,6 +4,8 @@ import { useParams } from "react-router-dom";
 import { useAuth } from "../contexts/AuthContext";
 import { useGlobalSocket } from "../hooks/useGlobalSocket";
 import { messageService, userService } from "../services/api";
+import { Send, Smile } from "lucide-react";
+import EmojiPicker from "emoji-picker-react";
 
 interface Conversation {
   userId: number;
@@ -32,7 +34,8 @@ const Messages: React.FC = () => {
   );
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [input, setInput] = useState("");
-  const messagesEndRef = useRef<HTMLDivElement>(null);
+  const [showEmojiPicker, setShowEmojiPicker] = useState(false);
+  const chatContainerRef = useRef<HTMLDivElement>(null);
 
   // Fetch conversations on mount
   useEffect(() => {
@@ -121,17 +124,27 @@ const Messages: React.FC = () => {
           // Only add message if it's from another user (not from current user)
           if (Number(msg.from) !== Number(user.id)) {
             setMessages((prev) => [...prev, msg]);
+            // Mark as read immediately when message is received
+            markRead(selected);
           }
         }
       }
     };
     on("message", handler);
     return () => {};
-  }, [selected, on, user]);
+  }, [selected, on, user, markRead]);
 
+  // Remove auto-scroll behavior - let user control scrolling manually
+
+  // Update conversations with unread counts
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [messages]);
+    setConversations((prev) =>
+      prev.map((conv) => ({
+        ...conv,
+        unreadCount: unreadCounts[conv.userId] || 0,
+      }))
+    );
+  }, [unreadCounts]);
 
   const handleSend = () => {
     if (selected !== null && input.trim() && user) {
@@ -148,6 +161,18 @@ const Messages: React.FC = () => {
         },
       ]);
       setInput("");
+      setShowEmojiPicker(false);
+    }
+  };
+
+  const handleEmojiClick = (emojiObject: any) => {
+    setInput((prev) => prev + emojiObject.emoji);
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === "Enter" && !e.shiftKey) {
+      e.preventDefault();
+      handleSend();
     }
   };
 
@@ -171,12 +196,16 @@ const Messages: React.FC = () => {
                     `👤 Selected user: ${conv?.username} (ID: ${conv?.userId})`
                   );
                   setSelected(Number(conv?.userId));
+                  // Mark as read when conversation is selected
+                  if (conv.unreadCount && conv.unreadCount > 0) {
+                    markRead(conv.userId);
+                  }
                 }}
               >
                 <span className="text-white">{conv?.username}</span>
-                {unreadCounts[conv?.userId] > 0 && (
+                {conv.unreadCount && conv.unreadCount > 0 && (
                   <span className="bg-red-500 text-white text-xs rounded-full px-2 py-0.5 ml-2">
-                    {unreadCounts[conv?.userId]}
+                    {conv.unreadCount}
                   </span>
                 )}
               </li>
@@ -191,7 +220,10 @@ const Messages: React.FC = () => {
       </div>
       {/* Chat Window */}
       <div className="flex-1 flex flex-col">
-        <div className="flex-1 p-6 overflow-y-auto">
+        <div
+          ref={chatContainerRef}
+          className="flex-1 p-6 overflow-y-auto overflow-x-hidden"
+        >
           {selected ? (
             <div>
               {messages && messages.length > 0 ? (
@@ -205,7 +237,7 @@ const Messages: React.FC = () => {
                     }`}
                   >
                     <div
-                      className={`px-4 py-2 rounded-lg ${
+                      className={`px-4 py-2 rounded-lg max-w-xs break-words ${
                         user && Number(msg.from) === Number(user.id)
                           ? "bg-primary-500 text-white"
                           : "bg-dark-700 text-white"
@@ -220,7 +252,6 @@ const Messages: React.FC = () => {
                   No messages yet. Start the conversation!
                 </div>
               )}
-              <div ref={messagesEndRef} />
             </div>
           ) : (
             <div className="text-gray-400 text-center py-8">
@@ -229,20 +260,43 @@ const Messages: React.FC = () => {
           )}
         </div>
         {selected && (
-          <div className="p-4 border-t border-dark-700 flex">
-            <input
-              className="flex-1 bg-dark-700 text-white px-4 py-2 rounded-l-lg focus:outline-none"
-              value={input}
-              onChange={(e) => setInput(e.target.value)}
-              onKeyDown={(e) => e.key === "Enter" && handleSend()}
-              placeholder="Type your message..."
-            />
-            <button
-              className="bg-primary-500 hover:bg-primary-600 text-white px-6 py-2 rounded-r-lg"
-              onClick={handleSend}
-            >
-              Send
-            </button>
+          <div className="p-4 border-t border-dark-700">
+            {/* Emoji Picker */}
+            {showEmojiPicker && (
+              <div className="absolute bottom-20 right-4 z-10">
+                <EmojiPicker
+                  onEmojiClick={handleEmojiClick}
+                  width={300}
+                  height={400}
+                />
+              </div>
+            )}
+
+            {/* Input Area */}
+            <div className="flex items-center">
+              <input
+                className="flex-1 bg-dark-700 text-white px-4 py-2 rounded-l-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
+                value={input}
+                onChange={(e) => setInput(e.target.value)}
+                onKeyDown={handleKeyDown}
+                placeholder="Type your message..."
+              />
+              <button
+                className="bg-dark-700 hover:bg-dark-600 text-gray-400 hover:text-white px-3 py-2 border-l border-dark-600"
+                onClick={() => setShowEmojiPicker(!showEmojiPicker)}
+                type="button"
+              >
+                <Smile size={20} />
+              </button>
+              <button
+                className="bg-primary-500 hover:bg-primary-600 text-white px-4 py-2 rounded-r-lg flex items-center gap-2 transition-colors"
+                onClick={handleSend}
+                disabled={!input.trim()}
+              >
+                <Send size={18} />
+                <span>Send</span>
+              </button>
+            </div>
           </div>
         )}
       </div>
