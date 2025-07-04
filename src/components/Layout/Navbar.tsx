@@ -64,12 +64,12 @@ const Navbar: React.FC = () => {
           >
             Shop
           </Link>
-          <Link
+          {/* <Link
             to="/"
             className="text-white hover:text-primary-300 transition-colors"
           >
             Live Cams
-          </Link>
+          </Link> */}
           <Link
             to="/trading"
             className="text-white hover:text-primary-300 transition-colors"
@@ -230,13 +230,13 @@ const Navbar: React.FC = () => {
             >
               Shop
             </Link>
-            <Link
+            {/* <Link
               to="/"
               className="text-white hover:text-primary-300 transition-colors py-2"
               onClick={() => setIsMenuOpen(false)}
             >
               Live Cams
-            </Link>
+            </Link> */}
             <Link
               to="/trading"
               className="text-white hover:text-primary-300 transition-colors py-2"
