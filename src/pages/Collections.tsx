@@ -11,6 +11,7 @@ import {
   MoreVertical,
 } from "lucide-react";
 import { collectionService, Collection } from "../services/api";
+import Swal from "sweetalert2";
 
 interface CollectionsProps {
   isOwnProfile?: boolean;
@@ -89,14 +90,14 @@ const Collections: React.FC<CollectionsProps> = ({ isOwnProfile = false }) => {
       ]);
       setShowCreateModal(false);
       setNewCollection({ name: "", description: "", isPublic: false });
-
-      // Show success feedback
-      const toast = document.createElement("div");
-      toast.className =
-        "fixed top-4 right-4 bg-green-500 text-white px-4 py-2 rounded shadow-lg z-50";
-      toast.textContent = "Collection created successfully!";
-      document.body.appendChild(toast);
-      setTimeout(() => document.body.removeChild(toast), 3000);
+      Swal.fire({
+        title: "Success!",
+        text: "Collection created successfully!",
+        icon: "success",
+        timer: 2000,
+        showConfirmButton: false,
+        position: "center",
+      });
     } catch (error) {
       console.error("Failed to create collection:", error);
       setError("Failed to create collection");
@@ -119,14 +120,14 @@ const Collections: React.FC<CollectionsProps> = ({ isOwnProfile = false }) => {
       setShowEditModal(false);
       setSelectedCollection(null);
       setEditingCollection({ name: "", description: "", isPublic: false });
-
-      // Show success feedback
-      const toast = document.createElement("div");
-      toast.className =
-        "fixed top-4 right-4 bg-green-500 text-white px-4 py-2 rounded shadow-lg z-50";
-      toast.textContent = "Collection updated successfully!";
-      document.body.appendChild(toast);
-      setTimeout(() => document.body.removeChild(toast), 3000);
+      Swal.fire({
+        title: "Success!",
+        text: "Collection updated successfully!",
+        icon: "success",
+        timer: 2000,
+        showConfirmButton: false,
+        position: "center",
+      });
     } catch (error) {
       console.error("Failed to update collection:", error);
       setError("Failed to update collection");
@@ -134,31 +135,37 @@ const Collections: React.FC<CollectionsProps> = ({ isOwnProfile = false }) => {
   };
 
   const handleDeleteCollection = async (collection: Collection) => {
-    if (
-      !confirm(
-        `Are you sure you want to delete "${collection.name}"? This action cannot be undone.`
-      )
-    ) {
-      return;
-    }
-
-    try {
-      await collectionService.deleteCollection(collection.id);
-      setCollections((prev) =>
-        (Array.isArray(prev) ? prev : []).filter((c) => c.id !== collection.id)
-      );
-
-      // Show success feedback
-      const toast = document.createElement("div");
-      toast.className =
-        "fixed top-4 right-4 bg-green-500 text-white px-4 py-2 rounded shadow-lg z-50";
-      toast.textContent = "Collection deleted successfully!";
-      document.body.appendChild(toast);
-      setTimeout(() => document.body.removeChild(toast), 3000);
-    } catch (error) {
-      console.error("Failed to delete collection:", error);
-      setError("Failed to delete collection");
-    }
+    Swal.fire({
+      title: "Are you sure?",
+      text: "You won't be able to revert this!",
+      icon: "warning",
+      showCancelButton: true,
+      confirmButtonColor: "#3085d6",
+      cancelButtonColor: "#d33",
+      confirmButtonText: "Yes, delete it!",
+    }).then(async (result) => {
+      if (result.isConfirmed) {
+        try {
+          await collectionService.deleteCollection(collection.id);
+          setCollections((prev) =>
+            (Array.isArray(prev) ? prev : []).filter(
+              (c) => c.id !== collection.id
+            )
+          );
+          Swal.fire({
+            title: "Deleted!",
+            text: "Your file has been deleted.",
+            icon: "success",
+            position: "center",
+            timer: 2000,
+            showConfirmButton: false,
+          });
+        } catch (error) {
+          console.error("Failed to delete collection:", error);
+          setError("Failed to delete collection");
+        }
+      }
+    });
   };
 
   const openEditModal = (collection: Collection) => {
