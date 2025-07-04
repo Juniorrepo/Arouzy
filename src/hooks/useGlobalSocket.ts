@@ -28,7 +28,7 @@ export function useGlobalSocket(token: string | null) {
 
     console.log("🔌 Connecting to WebSocket server...");
     // TODO: Change to ws://localhost:8080/ws?token=${token} when developing locally
-    const ws = new WebSocket(`wss://arouzy.up.railway.app/ws?token=${token}`);
+    const ws = new WebSocket(`https://arouzy.up.railway.app/ws?token=${token}`);
 
     ws.onopen = () => {
       console.log("✅ WebSocket connected to server");
