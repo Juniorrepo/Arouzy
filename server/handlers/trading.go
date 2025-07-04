@@ -305,10 +305,16 @@ func ListTradeRequestsHandler(w http.ResponseWriter, r *http.Request) {
 	defer cancel()
 
 	rows, err := database.DBPool.Query(ctx, `
-		SELECT id, from_user_id, to_user_id, trading_content_id, offered_content_id, status, created_at
-		FROM trade_requests
-		WHERE to_user_id = $1 AND status = 'pending'
-		ORDER BY created_at DESC
+		SELECT tr.id, tr.from_user_id, tr.to_user_id, tr.trading_content_id, tr.offered_content_id, tr.status, tr.created_at,
+		       tc1.title as trading_content_title, tc1.file_url as trading_content_file_url,
+		       tc2.title as offered_content_title, tc2.file_url as offered_content_file_url,
+		       u.username as from_username
+		FROM trade_requests tr
+		LEFT JOIN trading_content tc1 ON tr.trading_content_id = tc1.id
+		LEFT JOIN trading_content tc2 ON tr.offered_content_id = tc2.id
+		LEFT JOIN users u ON tr.from_user_id = u.id
+		WHERE tr.to_user_id = $1 AND tr.status = 'pending'
+		ORDER BY tr.created_at DESC
 	`, user.ID)
 	if err != nil {
 		http.Error(w, "Database error", http.StatusInternalServerError)
@@ -316,9 +322,24 @@ func ListTradeRequestsHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	defer rows.Close()
 
-	var requests []models.TradeRequest
+	type TradeRequestWithDetails struct {
+		ID                    int    `json:"id"`
+		FromUserID            int    `json:"fromUserId"`
+		ToUserID              int    `json:"toUserId"`
+		TradingContentID      int    `json:"tradingContentId"`
+		OfferedContentID      int    `json:"offeredContentId"`
+		Status                string `json:"status"`
+		CreatedAt             string `json:"createdAt"`
+		TradingContentTitle   string `json:"tradingContentTitle"`
+		TradingContentFileURL string `json:"tradingContentFileUrl"`
+		OfferedContentTitle   string `json:"offeredContentTitle"`
+		OfferedContentFileURL string `json:"offeredContentFileUrl"`
+		FromUsername          string `json:"fromUsername"`
+	}
+
+	var requests []TradeRequestWithDetails
 	for rows.Next() {
-		var req models.TradeRequest
+		var req TradeRequestWithDetails
 		var createdAt time.Time
 		err := rows.Scan(
 			&req.ID,
@@ -328,6 +349,11 @@ func ListTradeRequestsHandler(w http.ResponseWriter, r *http.Request) {
 			&req.OfferedContentID,
 			&req.Status,
 			&createdAt,
+			&req.TradingContentTitle,
+			&req.TradingContentFileURL,
+			&req.OfferedContentTitle,
+			&req.OfferedContentFileURL,
+			&req.FromUsername,
 		)
 		if err != nil {
 			http.Error(w, "Error parsing database result", http.StatusInternalServerError)
@@ -401,9 +427,60 @@ func AcceptTradeRequestHandler(w http.ResponseWriter, r *http.Request) {
 
 // RejectTradeRequestHandler handles rejecting a trade request
 func RejectTradeRequestHandler(w http.ResponseWriter, r *http.Request) {
-	// TODO: Implement reject logic
-	w.WriteHeader(http.StatusNotImplemented)
-	w.Write([]byte("Reject trade request not implemented yet"))
+	user, ok := r.Context().Value(models.UserContextKey).(models.User)
+	if !ok {
+		http.Error(w, "User not found in context", http.StatusInternalServerError)
+		return
+	}
+
+	idStr := strings.TrimPrefix(r.URL.Path, "/api/trading/request/")
+	idStr = strings.TrimSuffix(idStr, "/reject")
+	id, err := strconv.Atoi(idStr)
+	if err != nil {
+		http.Error(w, "Invalid request ID", http.StatusBadRequest)
+		return
+	}
+
+	ctx, cancel := context.WithTimeout(r.Context(), 10*time.Second)
+	defer cancel()
+
+	log.Printf("[DEBUG] RejectTradeRequestHandler: userID=%d rejecting tradeRequestID=%d", user.ID, id)
+	
+	// First, let's check what trade request we're trying to reject
+	var fromUserID, toUserID, tradingContentID, offeredContentID int
+	var status string
+	err = database.DBPool.QueryRow(ctx, `
+		SELECT from_user_id, to_user_id, trading_content_id, offered_content_id, status
+		FROM trade_requests WHERE id = $1
+	`, id).Scan(&fromUserID, &toUserID, &tradingContentID, &offeredContentID, &status)
+	if err != nil {
+		log.Printf("[DEBUG] Trade request %d not found: %v", id, err)
+		http.Error(w, "Trade request not found", http.StatusNotFound)
+		return
+	}
+	
+	log.Printf("[DEBUG] Trade request %d: from_user_id=%d, to_user_id=%d, trading_content_id=%d, offered_content_id=%d, status=%s", 
+		id, fromUserID, toUserID, tradingContentID, offeredContentID, status)
+	
+	// Only allow if user is the to_user_id and request is pending
+	res, err := database.DBPool.Exec(ctx, `
+		UPDATE trade_requests SET status = 'rejected'
+		WHERE id = $1 AND to_user_id = $2 AND status = 'pending'
+	`, id, user.ID)
+	if err != nil {
+		log.Printf("[DEBUG] Database error updating trade request: %v", err)
+		http.Error(w, "Database error", http.StatusInternalServerError)
+		return
+	}
+	if res.RowsAffected() == 0 {
+		log.Printf("[DEBUG] No rows affected - user %d cannot reject trade request %d", user.ID, id)
+		http.Error(w, "Trade request not found or not allowed", http.StatusForbidden)
+		return
+	}
+	log.Printf("[DEBUG] Trade request %d rejected by user %d", id, user.ID)
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(map[string]string{"message": "Trade request rejected"})
 }
 
 // CLI utility for debugging: Print all trade_requests

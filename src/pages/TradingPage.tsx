@@ -32,6 +32,7 @@ const TradingPage: React.FC = () => {
   const [modalLoading, setModalLoading] = useState(false);
   const [modalError, setModalError] = useState<string | null>(null);
   const [modalSuccess, setModalSuccess] = useState(false);
+  const [pendingRequestsCount, setPendingRequestsCount] = useState(0);
 
   useEffect(() => {
     const fetchTradingContent = async () => {
@@ -48,6 +49,21 @@ const TradingPage: React.FC = () => {
       }
     };
     fetchTradingContent();
+  }, []);
+
+  // Fetch pending trade requests count
+  useEffect(() => {
+    const fetchPendingRequestsCount = async () => {
+      try {
+        const response = await tradingService.listTradeRequests();
+        setPendingRequestsCount(response.data.length);
+      } catch (err) {
+        console.log(err);
+        // Don't show error for this, just set count to 0
+        setPendingRequestsCount(0);
+      }
+    };
+    fetchPendingRequestsCount();
   }, []);
 
   // Fetch my trading content for modal
@@ -79,7 +95,19 @@ const TradingPage: React.FC = () => {
     try {
       await tradingService.sendTradeRequest(selectedTradingId, selectedOfferId);
       setModalSuccess(true);
-      setTimeout(() => setShowModal(false), 1200);
+      setTimeout(() => {
+        setShowModal(false);
+        // Refresh the trading content to update hasAccess
+        const fetchTradingContent = async () => {
+          try {
+            const response = await tradingService.listTradingContent();
+            setTradingContent(response.data);
+          } catch (err) {
+            console.log(err);
+          }
+        };
+        fetchTradingContent();
+      }, 1200);
     } catch (err) {
       console.log(err);
       setModalError("Failed to send trade request.");
@@ -92,12 +120,25 @@ const TradingPage: React.FC = () => {
     <div className="max-w-6xl mx-auto px-4 py-10">
       <div className="flex items-center justify-between mb-8">
         <h1 className="text-2xl font-bold text-primary-500">Trading Content</h1>
-        <Link
-          to="/trading/upload"
-          className="px-4 py-2 bg-primary-500 text-white rounded-full font-semibold hover:bg-primary-600 transition-colors"
-        >
-          + Upload
-        </Link>
+        <div className="flex space-x-3">
+          <Link
+            to="/trading/requests"
+            className="px-4 py-2 bg-dark-700 text-white rounded-full font-semibold hover:bg-dark-600 transition-colors relative"
+          >
+            Trade Requests
+            {pendingRequestsCount > 0 && (
+              <span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">
+                {pendingRequestsCount}
+              </span>
+            )}
+          </Link>
+          <Link
+            to="/trading/upload"
+            className="px-4 py-2 bg-primary-500 text-white rounded-full font-semibold hover:bg-primary-600 transition-colors"
+          >
+            + Upload
+          </Link>
+        </div>
       </div>
       {isLoading ? (
         <div>Loading trading content...</div>

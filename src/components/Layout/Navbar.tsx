@@ -70,6 +70,12 @@ const Navbar: React.FC = () => {
           >
             Live Cams
           </Link>
+          <Link
+            to="/trading"
+            className="text-white hover:text-primary-300 transition-colors"
+          >
+            Trading
+          </Link>
         </div>
 
         {/* Search Bar */}
@@ -223,6 +229,13 @@ const Navbar: React.FC = () => {
               onClick={() => setIsMenuOpen(false)}
             >
               Live Cams
+            </Link>
+            <Link
+              to="/trading"
+              className="text-white hover:text-primary-300 transition-colors py-2"
+              onClick={() => setIsMenuOpen(false)}
+            >
+              Trading
             </Link>
             {!isAuthenticated ? (
               <div className="flex flex-col space-y-2 pt-4 border-t border-dark-600">

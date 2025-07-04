@@ -138,6 +138,15 @@ export const tradingService = {
   listMyTradingContent: async () => {
     return api.get("/api/trading/mine");
   },
+  listTradeRequests: async () => {
+    return api.get("/api/trading/requests");
+  },
+  acceptTradeRequest: async (requestId: number) => {
+    return api.post(`/api/trading/request/${requestId}/accept`);
+  },
+  rejectTradeRequest: async (requestId: number) => {
+    return api.post(`/api/trading/request/${requestId}/reject`);
+  },
 };
 
 // Types

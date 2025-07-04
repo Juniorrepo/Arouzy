@@ -18,6 +18,7 @@ import Followers from "./pages/Followers";
 import Following from "./pages/Following";
 import TradingUpload from "./pages/TradingUpload";
 import TradingPage from "./pages/TradingPage";
+import TradeRequests from "./pages/TradeRequests";
 
 function App() {
   const { isAuthenticated } = useAuth();
@@ -85,6 +86,9 @@ function App() {
 
           {/* Trading Content Page */}
           <Route path="/trading" element={<TradingPage />} />
+
+          {/* Trade Requests Page */}
+          <Route path="/trading/requests" element={<TradeRequests />} />
 
           {/* Not Found */}
           <Route path="*" element={<NotFound />} />
