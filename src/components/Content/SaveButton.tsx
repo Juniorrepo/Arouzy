@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { Bookmark, Plus } from "lucide-react";
 import { collectionService, Collection } from "../../services/api";
+import toast from "react-hot-toast";
 
 interface SaveButtonProps {
   contentId: number;
@@ -12,10 +13,10 @@ const SaveButton: React.FC<SaveButtonProps> = ({
   className = "",
 }) => {
   const [collections, setCollections] = useState<Collection[]>([]);
-  const [showModal, setShowModal] = useState(false);
-  const [loading, setLoading] = useState(false);
-  const [saving, setSaving] = useState(false);
-  const [showCreateForm, setShowCreateForm] = useState(false);
+  const [showModal, setShowModal] = useState<boolean>(false);
+  const [loading, setLoading] = useState<boolean>(false);
+  const [saving, setSaving] = useState<boolean>(false);
+  const [showCreateForm, setShowCreateForm] = useState<boolean>(false);
   const [newCollection, setNewCollection] = useState({
     name: "",
     description: "",
@@ -32,7 +33,7 @@ const SaveButton: React.FC<SaveButtonProps> = ({
     try {
       setLoading(true);
       const response = await collectionService.listMyCollections();
-      setCollections(response.data);
+      setCollections(response?.data ?? []);
     } catch (error) {
       console.error("Failed to load collections:", error);
     } finally {
@@ -45,22 +46,10 @@ const SaveButton: React.FC<SaveButtonProps> = ({
       setSaving(true);
       await collectionService.saveToCollection(collectionId, contentId);
       setShowModal(false);
-      // Show success feedback
-      const toast = document.createElement("div");
-      toast.className =
-        "fixed top-4 right-4 bg-green-500 text-white px-4 py-2 rounded shadow-lg z-50";
-      toast.textContent = "Saved to collection!";
-      document.body.appendChild(toast);
-      setTimeout(() => document.body.removeChild(toast), 3000);
+      toast.success("Saved to collection!");
     } catch (error) {
       console.error("Failed to save to collection:", error);
-      // Show error feedback
-      const toast = document.createElement("div");
-      toast.className =
-        "fixed top-4 right-4 bg-red-500 text-white px-4 py-2 rounded shadow-lg z-50";
-      toast.textContent = "Failed to save to collection";
-      document.body.appendChild(toast);
-      setTimeout(() => document.body.removeChild(toast), 3000);
+      toast.error("Failed to save to collection");
     } finally {
       setSaving(false);
     }
@@ -72,13 +61,16 @@ const SaveButton: React.FC<SaveButtonProps> = ({
     try {
       setSaving(true);
       const response = await collectionService.createCollection(newCollection);
-      const createdCollection = response.data;
+      const createdCollection = response?.data;
 
       // Add to collections list
       setCollections((prev) => [createdCollection, ...prev]);
 
       // Save content to the new collection
-      await collectionService.saveToCollection(createdCollection.id, contentId);
+      await collectionService.saveToCollection(
+        createdCollection?.id,
+        contentId
+      );
 
       setShowCreateForm(false);
       setNewCollection({ name: "", description: "", isPublic: false });
@@ -140,7 +132,7 @@ const SaveButton: React.FC<SaveButtonProps> = ({
                     </label>
                     <input
                       type="text"
-                      value={newCollection.name}
+                      value={newCollection?.name}
                       onChange={(e) =>
                         setNewCollection((prev) => ({
                           ...prev,
@@ -157,7 +149,7 @@ const SaveButton: React.FC<SaveButtonProps> = ({
                       Description
                     </label>
                     <textarea
-                      value={newCollection.description}
+                      value={newCollection?.description}
                       onChange={(e) =>
                         setNewCollection((prev) => ({
                           ...prev,
@@ -174,7 +166,7 @@ const SaveButton: React.FC<SaveButtonProps> = ({
                     <input
                       type="checkbox"
                       id="isPublic"
-                      checked={newCollection.isPublic}
+                      checked={newCollection?.isPublic}
                       onChange={(e) =>
                         setNewCollection((prev) => ({
                           ...prev,
@@ -191,7 +183,7 @@ const SaveButton: React.FC<SaveButtonProps> = ({
                   <div className="flex space-x-3 pt-4">
                     <button
                       onClick={handleCreateCollection}
-                      disabled={saving || !newCollection.name.trim()}
+                      disabled={saving || !newCollection?.name?.trim()}
                       className="flex-1 px-4 py-2 bg-primary-600 hover:bg-primary-700 disabled:bg-gray-600 text-white rounded-lg transition-colors"
                     >
                       {saving ? "Creating..." : "Create & Save"}
@@ -224,7 +216,7 @@ const SaveButton: React.FC<SaveButtonProps> = ({
                       <div className="text-center py-4">
                         <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary-500 mx-auto"></div>
                       </div>
-                    ) : collections.length === 0 ? (
+                    ) : collections?.length === 0 ? (
                       <div className="text-center py-4 text-gray-400">
                         <p>No collections yet</p>
                         <p className="text-sm">
@@ -233,11 +225,11 @@ const SaveButton: React.FC<SaveButtonProps> = ({
                       </div>
                     ) : (
                       <div className="space-y-2 max-h-60 overflow-y-auto">
-                        {collections.map((collection) => (
+                        {collections?.map((collection) => (
                           <button
-                            key={collection.id}
+                            key={collection?.id}
                             onClick={() =>
-                              handleSaveToCollection(collection.id)
+                              handleSaveToCollection(collection?.id)
                             }
                             disabled={saving}
                             className="w-full flex items-center justify-between p-3 bg-gray-800 hover:bg-gray-700 rounded-lg transition-colors text-left"
@@ -245,22 +237,22 @@ const SaveButton: React.FC<SaveButtonProps> = ({
                             <div className="flex-1">
                               <div className="flex items-center space-x-2">
                                 <span className="font-medium text-white">
-                                  {collection.name}
+                                  {collection?.name}
                                 </span>
-                                {collection.isPublic && (
+                                {collection?.isPublic && (
                                   <span className="text-xs bg-green-600 text-white px-2 py-1 rounded">
                                     Public
                                   </span>
                                 )}
                               </div>
-                              {collection.description && (
+                              {collection?.description && (
                                 <p className="text-sm text-gray-400 mt-1">
-                                  {collection.description}
+                                  {collection?.description}
                                 </p>
                               )}
                               <p className="text-xs text-gray-500 mt-1">
-                                {collection.contentCount} item
-                                {collection.contentCount !== 1 ? "s" : ""}
+                                {collection?.contentCount} item
+                                {collection?.contentCount !== 1 ? "s" : ""}
                               </p>
                             </div>
                             {saving && (

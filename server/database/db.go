@@ -206,5 +206,29 @@ func initializeSchema(ctx context.Context, pool *pgxpool.Pool) error {
 		return fmt.Errorf("error creating collection_content table: %v", err)
 	}
 
+	// Create messages table
+	_, err = pool.Exec(ctx, `
+		CREATE TABLE IF NOT EXISTS messages (
+			id SERIAL PRIMARY KEY,
+			from_user_id INTEGER REFERENCES users(id),
+			to_user_id INTEGER REFERENCES users(id),
+			message TEXT NOT NULL,
+			created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+			read_at TIMESTAMP WITH TIME ZONE NULL
+		)
+	`)
+	if err != nil {
+		return fmt.Errorf("error creating messages table: %v", err)
+	}
+
+	// Create index for better query performance
+	_, err = pool.Exec(ctx, `
+		CREATE INDEX IF NOT EXISTS idx_messages_users ON messages(from_user_id, to_user_id);
+		CREATE INDEX IF NOT EXISTS idx_messages_created_at ON messages(created_at);
+	`)
+	if err != nil {
+		return fmt.Errorf("error creating messages indexes: %v", err)
+	}
+
 	return nil
 }

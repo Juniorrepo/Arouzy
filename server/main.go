@@ -42,6 +42,7 @@ func main() {
 	apiRouter.HandleFunc("/health", handlers.HealthCheckHandler).Methods("GET")
 	// Public user profile route
 	usersRouter := apiRouter.PathPrefix("/users").Subrouter()
+	usersRouter.HandleFunc("/{id:[0-9]+}", handlers.GetUserByIdHandler).Methods("GET")
 	usersRouter.HandleFunc("/{username}/profile", handlers.GetPublicUserProfileHandler).Methods("GET")
 	usersRouter.HandleFunc("/{username}/follow", middleware.AuthMiddleware(handlers.FollowUserHandler)).Methods("POST")
 	usersRouter.HandleFunc("/{username}/follow", middleware.AuthMiddleware(handlers.UnfollowUserHandler)).Methods("DELETE")
@@ -96,6 +97,14 @@ func main() {
 	collectionsRouter.HandleFunc("/update", middleware.AuthMiddleware(handlers.UpdateCollectionHandler)).Methods("PUT")
 	collectionsRouter.HandleFunc("/delete", middleware.AuthMiddleware(handlers.DeleteCollectionHandler)).Methods("DELETE")
 	collectionsRouter.HandleFunc("/detail/{id}", middleware.OptionalAuthMiddleware(handlers.GetCollectionHandler)).Methods("GET")
+
+	// Messages routes
+	messagesRouter := apiRouter.PathPrefix("/messages").Subrouter()
+	messagesRouter.HandleFunc("/conversations", middleware.AuthMiddleware(handlers.ListConversationsHandler)).Methods("GET")
+	messagesRouter.HandleFunc("/history", middleware.AuthMiddleware(handlers.GetMessageHistoryHandler)).Methods("GET")
+
+	// WebSocket endpoint for real-time messaging
+	router.HandleFunc("/ws", handlers.WebSocketHandler)
 
 	// Set up CORS
 	c := cors.New(cors.Options{

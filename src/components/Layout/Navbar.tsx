@@ -2,21 +2,28 @@ import React, { useState, useRef, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../../contexts/AuthContext";
 import { useSearch } from "../../contexts/SearchContext";
-import { Search, Menu, X, User, LogOut } from "lucide-react";
+import { Search, Menu, X, User, LogOut, MessageCircle } from "lucide-react";
 import SearchSuggestions from "../Content/SearchSuggestions";
 import { contentService } from "../../services/api";
 import { ContentItem } from "../../pages/Home";
+import { useGlobalSocket } from "../../hooks/useGlobalSocket";
 
 const Navbar: React.FC = () => {
   const { user, isAuthenticated, logout } = useAuth();
   const { searchQuery, setSearchQuery, clearSearch } = useSearch();
   const navigate = useNavigate();
-  const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const [isProfileMenuOpen, setIsProfileMenuOpen] = useState(false);
-  const [showSearchSuggestions, setShowSearchSuggestions] = useState(false);
+  const [isMenuOpen, setIsMenuOpen] = useState<boolean>(false);
+  const [isProfileMenuOpen, setIsProfileMenuOpen] = useState<boolean>(false);
+  const [showSearchSuggestions, setShowSearchSuggestions] =
+    useState<boolean>(false);
   const searchInputRef = useRef<HTMLInputElement>(null);
   const [dynamicContent, setDynamicContent] = useState<ContentItem[]>([]);
-  const [isLoadingContent, setIsLoadingContent] = useState(false);
+  const [isLoadingContent, setIsLoadingContent] = useState<boolean>(false);
+
+  // Add global socket for unread messages
+  const token = localStorage.getItem("token");
+  const { unreadCounts } = useGlobalSocket(token);
+  const totalUnread = Object.values(unreadCounts).reduce((a, b) => a + b, 0);
 
   // Fetch content for search suggestions
   useEffect(() => {
@@ -117,52 +124,67 @@ const Navbar: React.FC = () => {
         {/* Auth Buttons / User Profile */}
         <div className="hidden md:flex items-center space-x-4">
           {isAuthenticated ? (
-            <div className="relative">
+            <>
+              {/* Message Icon */}
               <button
-                onClick={toggleProfileMenu}
-                className="flex items-center space-x-2 text-white hover:text-primary-300 transition-colors focus:outline-none"
+                className="relative mr-2"
+                onClick={() => navigate("/messages")}
+                aria-label="Messages"
               >
-                <div className="w-8 h-8 rounded-full bg-primary-500 flex items-center justify-center">
-                  <User className="h-5 w-5 text-white" />
-                </div>
+                <MessageCircle className="h-6 w-6 text-white" />
+                {totalUnread > 0 && (
+                  <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full px-1.5 py-0.5">
+                    {totalUnread}
+                  </span>
+                )}
               </button>
+              <div className="relative">
+                <button
+                  onClick={toggleProfileMenu}
+                  className="flex items-center space-x-2 text-white hover:text-primary-300 transition-colors focus:outline-none"
+                >
+                  <div className="w-8 h-8 rounded-full bg-primary-500 flex items-center justify-center">
+                    <User className="h-5 w-5 text-white" />
+                  </div>
+                </button>
 
-              {/* Profile Dropdown */}
-              {isProfileMenuOpen && (
-                <div className="absolute right-0 mt-2 w-48 bg-dark-800 rounded-md shadow-lg py-1 z-10 animate-fade-in">
-                  <Link
-                    to={`/profile/${user?.username}`}
-                    className="block px-4 py-2 text-sm text-white hover:bg-dark-700"
-                    onClick={() => setIsProfileMenuOpen(false)}
-                  >
-                    Profile
-                  </Link>
-                  <Link
-                    to={`/collections`}
-                    className="block px-4 py-2 text-sm text-white hover:bg-dark-700"
-                    onClick={() => setIsProfileMenuOpen(false)}
-                  >
-                    Collections
-                  </Link>
-                  <Link
-                    to={`/upload`}
-                    className="block px-4 py-2 text-sm text-white hover:bg-dark-700"
-                    onClick={() => setIsProfileMenuOpen(false)}
-                  >
-                    Upload
-                  </Link>
-                  <button
-                    onClick={handleLogout}
-                    className="block w-full text-left px-4 py-2 text-sm text-white hover:bg-dark-700"
-                  >
-                    <div className="flex items-center">
-                      <LogOut className="h-4 w-4 mr-2" />
-                      Sign out
-                    </div>
-                  </button>
-                </div>
-              )}
-            </div>
+                {/* Profile Dropdown */}
+                {isProfileMenuOpen && (
+                  <div className="absolute right-0 mt-2 w-48 bg-dark-800 rounded-md shadow-lg py-1 z-10 animate-fade-in">
+                    <Link
+                      to={`/profile/${user?.username}`}
+                      className="block px-4 py-2 text-sm text-white hover:bg-dark-700"
+                      onClick={() => setIsProfileMenuOpen(false)}
+                    >
+                      Profile
+                    </Link>
+                    <Link
+                      to={`/collections`}
+                      className="block px-4 py-2 text-sm text-white hover:bg-dark-700"
+                      onClick={() => setIsProfileMenuOpen(false)}
+                    >
+                      Collections
+                    </Link>
+                    <Link
+                      to={`/upload`}
+                      className="block px-4 py-2 text-sm text-white hover:bg-dark-700"
+                      onClick={() => setIsProfileMenuOpen(false)}
+                    >
+                      Upload
+                    </Link>
+                    <button
+                      onClick={handleLogout}
+                      className="block w-full text-left px-4 py-2 text-sm text-white hover:bg-dark-700"
+                    >
+                      <div className="flex items-center">
+                        <LogOut className="h-4 w-4 mr-2" />
+                        Sign out
+                      </div>
+                    </button>
+                  </div>
+                )}
+              </div>
+            </>
           ) : (
             <Link
               to="/signup"

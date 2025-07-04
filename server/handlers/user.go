@@ -4,7 +4,9 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"log"
 	"net/http"
+	"strconv"
 	"time"
 
 	"project/server/database"
@@ -95,7 +97,7 @@ func UpdateUserProfileHandler(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		query += ", username = $" + string(argPosition)
+		query += ", username = $" + strconv.Itoa(argPosition)
 		args = append(args, req.Username)
 		argPosition++
 	}
@@ -118,7 +120,7 @@ func UpdateUserProfileHandler(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		query += ", email = $" + string(argPosition)
+		query += ", email = $" + strconv.Itoa(argPosition)
 		args = append(args, req.Email)
 		argPosition++
 	}
@@ -131,13 +133,13 @@ func UpdateUserProfileHandler(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		query += ", password_hash = $" + string(argPosition)
+		query += ", password_hash = $" + strconv.Itoa(argPosition)
 		args = append(args, string(hashedPassword))
 		argPosition++
 	}
 
 	// Add WHERE clause and user ID
-	query += " WHERE id = $" + string(argPosition)
+	query += " WHERE id = $" + strconv.Itoa(argPosition)
 	args = append(args, user.ID)
 
 	// Execute the update if there are fields to update
@@ -158,6 +160,37 @@ func UpdateUserProfileHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Return updated user
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(user)
+}
+
+// GetUserByIdHandler returns basic user information by ID
+func GetUserByIdHandler(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	userIdStr := vars["id"]
+	userId, err := strconv.Atoi(userIdStr)
+	if err != nil {
+		http.Error(w, "Invalid user ID", http.StatusBadRequest)
+		return
+	}
+
+	ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
+	defer cancel()
+
+	var user models.User
+	err = database.DBPool.QueryRow(ctx, 
+		"SELECT id, username, email FROM users WHERE id = $1", userId).Scan(
+		&user.ID, &user.Username, &user.Email)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			http.Error(w, "User not found", http.StatusNotFound)
+		} else {
+			log.Printf("Error fetching user by ID: %v", err)
+			http.Error(w, "Internal server error", http.StatusInternalServerError)
+		}
+		return
+	}
+
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(user)
 }

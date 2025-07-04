@@ -112,6 +112,9 @@ export const userService = {
   getFollowing: async (username: string) => {
     return api.get(`/api/users/${username}/following`);
   },
+  getUserById: async (userId: number) => {
+    return api.get(`/api/users/${userId}`);
+  },
 };
 
 // Trading API services
@@ -191,6 +194,16 @@ export const collectionService = {
   },
   deleteCollection: async (collectionId: number) => {
     return api.delete(`/api/collections/delete?collectionId=${collectionId}`);
+  },
+};
+
+// Message API services
+export const messageService = {
+  getConversations: async () => {
+    return api.get("/api/messages/conversations");
+  },
+  getMessageHistory: async (userId: number) => {
+    return api.get("/api/messages/history", { params: { userId } });
   },
 };
 

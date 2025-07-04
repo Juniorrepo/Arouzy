@@ -21,6 +21,7 @@ import TradingPage from "./pages/TradingPage";
 import TradeRequests from "./pages/TradeRequests";
 import Collections from "./pages/Collections";
 import CollectionDetail from "./pages/CollectionDetail";
+import Messages from "./pages/Messages";
 
 function App() {
   const { isAuthenticated } = useAuth();
@@ -98,6 +99,10 @@ function App() {
             element={<Collections isOwnProfile={true} />}
           />
           <Route path="/collections/:id" element={<CollectionDetail />} />
+
+          {/* Messages Page */}
+          <Route path="/messages" element={<Messages />} />
+          <Route path="/messages/:userId" element={<Messages />} />
 
           {/* Not Found */}
           <Route path="*" element={<NotFound />} />
