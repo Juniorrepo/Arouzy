@@ -6,7 +6,7 @@ import { Search, Menu, X, User, LogOut, MessageCircle } from "lucide-react";
 import SearchSuggestions from "../Content/SearchSuggestions";
 import { contentService } from "../../services/api";
 import { ContentItem } from "../../pages/Home";
-import { useGlobalSocket } from "../../hooks/useGlobalSocket";
+import { useSocket } from "../../contexts/SocketContext";
 
 const Navbar: React.FC = () => {
   const { user, isAuthenticated, logout } = useAuth();
@@ -21,8 +21,7 @@ const Navbar: React.FC = () => {
   const [isLoadingContent, setIsLoadingContent] = useState<boolean>(false);
 
   // Add global socket for unread messages
-  const token = localStorage.getItem("token");
-  const { unreadCounts } = useGlobalSocket(token);
+  const { unreadCounts } = useSocket();
   const totalUnread = Object.values(unreadCounts).reduce((a, b) => a + b, 0);
 
   // Fetch content for search suggestions

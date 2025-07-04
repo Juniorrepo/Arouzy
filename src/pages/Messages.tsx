@@ -2,7 +2,7 @@
 import React, { useEffect, useState, useRef } from "react";
 import { useParams } from "react-router-dom";
 import { useAuth } from "../contexts/AuthContext";
-import { useGlobalSocket } from "../hooks/useGlobalSocket";
+import { useSocket } from "../contexts/SocketContext";
 import { messageService, userService } from "../services/api";
 import { Send, Smile } from "lucide-react";
 import EmojiPicker from "emoji-picker-react";
@@ -26,15 +26,14 @@ interface ChatMessage {
 const Messages: React.FC = () => {
   const { user } = useAuth();
   const { userId } = useParams<{ userId: string }>();
-  const token = localStorage.getItem("token");
-  const { sendMessage, unreadCounts, on, markRead } = useGlobalSocket(token);
+  const { sendMessage, unreadCounts, on, markRead } = useSocket();
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const [selected, setSelected] = useState<number | null>(
     userId ? Number(userId) : null
   );
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [input, setInput] = useState("");
-  const [showEmojiPicker, setShowEmojiPicker] = useState(false);
+  const [showEmojiPicker, setShowEmojiPicker] = useState<boolean>(false);
   const chatContainerRef = useRef<HTMLDivElement>(null);
 
   // Fetch conversations on mount
@@ -134,9 +133,6 @@ const Messages: React.FC = () => {
     return () => {};
   }, [selected, on, user, markRead]);
 
-  // Remove auto-scroll behavior - let user control scrolling manually
-
-  // Update conversations with unread counts
   useEffect(() => {
     setConversations((prev) =>
       prev.map((conv) => ({
@@ -261,19 +257,8 @@ const Messages: React.FC = () => {
         </div>
         {selected && (
           <div className="p-4 border-t border-dark-700">
-            {/* Emoji Picker */}
-            {showEmojiPicker && (
-              <div className="absolute bottom-20 right-4 z-10">
-                <EmojiPicker
-                  onEmojiClick={handleEmojiClick}
-                  width={300}
-                  height={400}
-                />
-              </div>
-            )}
-
-            {/* Input Area */}
-            <div className="flex items-center">
+            {/* Input Area with relative positioning for emoji picker */}
+            <div className="flex items-center relative">
               <input
                 className="flex-1 bg-dark-700 text-white px-4 py-2 rounded-l-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
                 value={input}
@@ -281,15 +266,26 @@ const Messages: React.FC = () => {
                 onKeyDown={handleKeyDown}
                 placeholder="Type your message..."
               />
+              <div className="relative">
+                <button
+                  className="bg-dark-700 hover:bg-dark-600 text-gray-400 hover:text-white px-3 py-2 border-l border-dark-600"
+                  onClick={() => setShowEmojiPicker(!showEmojiPicker)}
+                  type="button"
+                >
+                  <Smile size={20} />
+                </button>
+                {showEmojiPicker && (
+                  <div className="absolute bottom-full mb-2 right-0 z-10 shadow-lg">
+                    <EmojiPicker
+                      onEmojiClick={handleEmojiClick}
+                      width={300}
+                      height={400}
+                    />
+                  </div>
+                )}
+              </div>
               <button
-                className="bg-dark-700 hover:bg-dark-600 text-gray-400 hover:text-white px-3 py-2 border-l border-dark-600"
-                onClick={() => setShowEmojiPicker(!showEmojiPicker)}
-                type="button"
-              >
-                <Smile size={20} />
-              </button>
-              <button
-                className="bg-primary-500 hover:bg-primary-600 text-white px-4 py-2 rounded-r-lg flex items-center gap-2 transition-colors"
+                className="bg-primary-500 hover:bg-primary-600 text-white px-4 py-2 rounded-r-lg flex items-center gap-2 transition-colors cursor-pointer"
                 onClick={handleSend}
                 disabled={!input.trim()}
               >
