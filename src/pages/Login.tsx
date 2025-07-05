@@ -4,19 +4,17 @@ import { useAuth } from "../contexts/AuthContext";
 import { toast } from "react-hot-toast";
 
 const Login: React.FC = () => {
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [formError, setFormError] = useState("");
+  const [email, setEmail] = useState<string>("");
+  const [password, setPassword] = useState<string>("");
+  const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
+  const [formError, setFormError] = useState<string>("");
 
   const { login, isAuthenticated } = useAuth();
   const location = useLocation();
-  const from = (location.state as any)?.from?.pathname || "/";
+  const from =
+    (location.state as { from: { pathname: string } })?.from?.pathname || "/";
 
-  // If already authenticated, redirect back to the original page
-  if (isAuthenticated) {
-    return <Navigate to={from} replace />;
-  }
+  if (isAuthenticated) return <Navigate to={from} replace />;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -32,8 +30,15 @@ const Login: React.FC = () => {
       await login(email, password);
       toast.success("Login successful");
     } catch (error: any) {
-      toast.error(error.response.data.message);
-      setFormError(error.message);
+      console.error("Login error:", error);
+
+      const errorMessage =
+        error.response?.data?.message ||
+        error.message ||
+        "Login failed. Please try again.";
+
+      toast.error(errorMessage);
+      setFormError(errorMessage);
     } finally {
       setIsSubmitting(false);
     }

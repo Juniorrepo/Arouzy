@@ -4,11 +4,11 @@ import { useAuth } from "../contexts/AuthContext";
 import { toast } from "react-hot-toast";
 
 const SignUp: React.FC = () => {
-  const [username, setUsername] = useState("");
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [formError, setFormError] = useState("");
+  const [username, setUsername] = useState<string>("");
+  const [email, setEmail] = useState<string>("");
+  const [password, setPassword] = useState<string>("");
+  const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
+  const [formError, setFormError] = useState<string>("");
 
   const { signup } = useAuth();
   const navigate = useNavigate();
@@ -25,10 +25,15 @@ const SignUp: React.FC = () => {
     try {
       setIsSubmitting(true);
       await signup(username, email, password);
+      toast.success("Signup successful");
       navigate("/");
     } catch (error: any) {
-      toast.error(error.response.data.message);
-      setFormError(error.message);
+      const errorMessage =
+        error.response?.data?.message ||
+        error.message ||
+        "Signup failed. Please try again.";
+      toast.error(errorMessage);
+      setFormError(errorMessage);
     } finally {
       setIsSubmitting(false);
     }
