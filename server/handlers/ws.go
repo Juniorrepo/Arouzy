@@ -50,6 +50,17 @@ func wsAddUnread(to, from int) {
 		wsUnread.counts[to] = make(map[int]int)
 	}
 	wsUnread.counts[to][from]++
+	
+	// Send updated unread counts to the user if they're online
+	wsClients.RLock()
+	if client, ok := wsClients.clients[to]; ok {
+		client.Conn.WriteJSON(map[string]interface{}{
+			"type": "unread_counts",
+			"counts": wsGetUnread(to),
+		})
+	}
+	wsClients.RUnlock()
+	
 	wsUnread.Unlock()
 }
 
@@ -57,6 +68,16 @@ func wsClearUnread(user, from int) {
 	wsUnread.Lock()
 	if wsUnread.counts[user] != nil {
 		wsUnread.counts[user][from] = 0
+		
+		// Send updated unread counts to the user
+		wsClients.RLock()
+		if client, ok := wsClients.clients[user]; ok {
+			client.Conn.WriteJSON(map[string]interface{}{
+				"type": "unread_counts",
+				"counts": wsGetUnread(user),
+			})
+		}
+		wsClients.RUnlock()
 	}
 	wsUnread.Unlock()
 }
@@ -105,8 +126,27 @@ func WebSocketHandler(w http.ResponseWriter, r *http.Request) {
 		log.Printf("WebSocket connection closed for user %d", userID)
 	}()
 
-	// Send initial unread counts
+	// Load initial unread counts from database
+	dbUnreadCounts, err := GetUnreadCountsFromDB(userID)
+	if err != nil {
+		log.Printf("Error loading unread counts from database: %v", err)
+		// Fall back to in-memory counts if database fails
+		dbUnreadCounts = make(map[int]int)
+	}
+	
+	// Merge with in-memory counts (in-memory takes precedence)
+	wsUnread.RLock()
 	unread := wsGetUnread(userID)
+	wsUnread.RUnlock()
+	
+	// Add any counts from DB that aren't in memory
+	for fromUserID, count := range dbUnreadCounts {
+		if _, exists := unread[fromUserID]; !exists && count > 0 {
+			unread[fromUserID] = count
+		}
+	}
+	
+	// Send initial unread counts
 	conn.WriteJSON(map[string]interface{}{
 		"type": "unread_counts",
 		"counts": unread,
@@ -154,4 +194,4 @@ func WebSocketHandler(w http.ResponseWriter, r *http.Request) {
 			}
 		}
 	}
-} 
+}

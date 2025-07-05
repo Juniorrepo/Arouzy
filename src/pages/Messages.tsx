@@ -26,7 +26,7 @@ interface ChatMessage {
 const Messages: React.FC = () => {
   const { user } = useAuth();
   const { userId } = useParams<{ userId: string }>();
-  const { sendMessage, unreadCounts, on, markRead } = useSocket();
+  const { sendMessage, unreadCounts, on, off, markRead } = useSocket();
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const [selected, setSelected] = useState<number | null>(
     userId ? Number(userId) : null
@@ -129,9 +129,14 @@ const Messages: React.FC = () => {
         }
       }
     };
+
     on("message", handler);
-    return () => {};
-  }, [selected, on, user, markRead]);
+
+    // Proper cleanup using the off function
+    return () => {
+      off("message", handler); // Fixed: Use off instead of on
+    };
+  }, [selected, on, off, user, markRead]); // Add off to dependencies
 
   useEffect(() => {
     setConversations((prev) =>

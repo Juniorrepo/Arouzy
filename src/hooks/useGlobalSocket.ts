@@ -29,6 +29,7 @@ export function useGlobalSocket(token: string | null) {
     console.log("🔌 Connecting to WebSocket server...");
     // TODO: Change to ws://localhost:8080/ws?token=${token} when developing locally
     const ws = new WebSocket(`https://arouzy.up.railway.app/ws?token=${token}`);
+    // const ws = new WebSocket(`ws://localhost:8080/ws?token=${token}`);
 
     ws.onopen = () => {
       console.log("✅ WebSocket connected to server");
@@ -100,5 +101,14 @@ export function useGlobalSocket(token: string | null) {
     [socket]
   );
 
-  return { socket, sendMessage, unreadCounts, on, markRead };
+  // Add this function to remove event listeners
+  const off = useCallback((event: string, fn: EventListener) => {
+    if (listeners.current[event]) {
+      listeners.current[event] = listeners.current[event].filter(
+        (listener) => listener !== fn
+      );
+    }
+  }, []);
+
+  return { socket, sendMessage, unreadCounts, on, off, markRead };
 }

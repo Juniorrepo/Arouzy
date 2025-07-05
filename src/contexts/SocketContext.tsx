@@ -6,6 +6,7 @@ interface SocketContextType {
   sendMessage: (to: number, message: string) => void;
   unreadCounts: { [userId: string]: number };
   on: (event: string, fn: (data: unknown) => void) => void;
+  off: (event: string, fn: (data: unknown) => void) => void; // Add this line
   markRead: (from: number) => void;
 }
 

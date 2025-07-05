@@ -226,3 +226,33 @@ func GetMessageHistoryHandler(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(messages)
 }
+
+// GetUnreadCountsFromDB returns a map of user IDs to unread message counts
+func GetUnreadCountsFromDB(userID int) (map[int]int, error) {
+	ctx := context.Background()
+	
+	rows, err := database.DBPool.Query(ctx, `
+		SELECT from_user_id, COUNT(*) 
+		FROM messages 
+		WHERE to_user_id = $1 AND read_at IS NULL
+		GROUP BY from_user_id
+	`, userID)
+	
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	unreadCounts := make(map[int]int)
+	for rows.Next() {
+		var fromUserID int
+		var count int
+		if err := rows.Scan(&fromUserID, &count); err != nil {
+			log.Printf("Error scanning unread count: %v", err)
+			continue
+		}
+		unreadCounts[fromUserID] = count
+	}
+	
+	return unreadCounts, nil
+}

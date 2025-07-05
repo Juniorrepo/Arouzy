@@ -132,8 +132,8 @@ const Navbar: React.FC = () => {
               >
                 <MessageCircle className="h-6 w-6 text-white" />
                 {totalUnread > 0 && (
-                  <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full px-1.5 py-0.5">
-                    {totalUnread}
+                  <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full px-1.5 py-0.5 min-w-[1.2rem] text-center">
+                    {totalUnread > 99 ? "99+" : totalUnread}
                   </span>
                 )}
               </button>
@@ -307,6 +307,20 @@ const Navbar: React.FC = () => {
                 >
                   Sign out
                 </button>
+                {isAuthenticated && (
+                  <Link
+                    to="/messages"
+                    className="text-white hover:text-primary-300 transition-colors py-2 flex items-center"
+                    onClick={() => setIsMenuOpen(false)}
+                  >
+                    <span>Messages</span>
+                    {totalUnread > 0 && (
+                      <span className="ml-2 bg-red-500 text-white text-xs rounded-full px-1.5 py-0.5 min-w-[1.2rem] text-center">
+                        {totalUnread > 99 ? "99+" : totalUnread}
+                      </span>
+                    )}
+                  </Link>
+                )}
               </div>
             )}
           </div>
