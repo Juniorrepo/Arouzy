@@ -194,3 +194,69 @@ func generateUniqueFilename(originalName string) string {
 	timestamp := time.Now().UnixNano()
 	return fmt.Sprintf("%s_%d%s", name, timestamp, ext)
 }
+
+// MessageAttachmentHandler handles file uploads for chat messages
+func MessageAttachmentHandler(w http.ResponseWriter, r *http.Request) {
+	// Set response content type
+	w.Header().Set("Content-Type", "application/json")
+
+	// Handle CORS preflight
+	if r.Method == http.MethodOptions {
+		w.WriteHeader(http.StatusOK)
+		return
+	}
+
+	// Parse multipart form with a max memory of 50 MB
+	if err := r.ParseMultipartForm(50 << 20); err != nil {
+		http.Error(w, "Error parsing form data", http.StatusBadRequest)
+		return
+	}
+
+	// Retrieve the file from form data
+	file, header, err := r.FormFile("attachment")
+	if err != nil {
+		http.Error(w, "File not found in form", http.StatusBadRequest)
+		return
+	}
+	defer file.Close()
+
+	// Validate file type
+	if !isValidFileType(header.Filename) {
+		http.Error(w, "Invalid file type. Only images and videos are allowed.", http.StatusBadRequest)
+		return
+	}
+
+	// Generate unique filename
+	filename := generateUniqueFilename(header.Filename)
+
+	// Ensure uploads directory exists
+	uploadDir := "uploads/messages"
+	if err := os.MkdirAll(uploadDir, os.ModePerm); err != nil {
+		http.Error(w, "Unable to create upload directory", http.StatusInternalServerError)
+		return
+	}
+
+	// Create destination file
+	dstPath := filepath.Join(uploadDir, filename)
+	dst, err := os.Create(dstPath)
+	if err != nil {
+		http.Error(w, "Unable to save file", http.StatusInternalServerError)
+		return
+	}
+	defer dst.Close()
+
+	// Copy file data
+	if _, err := io.Copy(dst, file); err != nil {
+		http.Error(w, "Error saving file", http.StatusInternalServerError)
+		return
+	}
+
+	// Build response with file URL
+	resp := UploadResponse{
+		Filename: filename,
+		URL:      "/uploads/messages/" + filename,
+	}
+	
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(resp)
+}

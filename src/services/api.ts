@@ -205,6 +205,16 @@ export const messageService = {
   getMessageHistory: async (userId: number) => {
     return api.get("/api/messages/history", { params: { userId } });
   },
+  uploadAttachment: async (file: File) => {
+    const formData = new FormData();
+    formData.append("attachment", file);
+    
+    return api.post("/api/messages/attachment", formData, {
+      headers: {
+        "Content-Type": "multipart/form-data",
+      },
+    });
+  }
 };
 
 // Types

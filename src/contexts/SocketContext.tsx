@@ -3,10 +3,10 @@ import { useGlobalSocket } from "../hooks/useGlobalSocket";
 
 interface SocketContextType {
   socket: WebSocket | null;
-  sendMessage: (to: number, message: string) => void;
+  sendMessage: (to: number, message: string, attachmentUrl?: string) => void;
   unreadCounts: { [userId: string]: number };
   on: (event: string, fn: (data: unknown) => void) => void;
-  off: (event: string, fn: (data: unknown) => void) => void; // Add this line
+  off: (event: string, fn: (data: unknown) => void) => void;
   markRead: (from: number) => void;
 }
 

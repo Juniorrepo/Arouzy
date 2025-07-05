@@ -6,6 +6,8 @@ import { useSocket } from "../contexts/SocketContext";
 import { messageService, userService } from "../services/api";
 import { Send, Smile } from "lucide-react";
 import EmojiPicker from "emoji-picker-react";
+import { getThumbnailUrl } from "../utils/imageUtils";
+import toast from "react-hot-toast";
 
 interface Conversation {
   userId: number;
@@ -14,11 +16,13 @@ interface Conversation {
   unreadCount?: number;
 }
 
+// Update the ChatMessage interface
 interface ChatMessage {
   id?: number;
   from: number;
   to: number;
   message: string;
+  attachmentUrl?: string;
   timestamp?: string;
   readAt?: string;
 }
@@ -35,6 +39,47 @@ const Messages: React.FC = () => {
   const [input, setInput] = useState("");
   const [showEmojiPicker, setShowEmojiPicker] = useState<boolean>(false);
   const chatContainerRef = useRef<HTMLDivElement>(null);
+
+  // Add a new state for the attachment
+  const [attachment, setAttachment] = useState<File | null>(null);
+  const [attachmentPreview, setAttachmentPreview] = useState<string | null>(
+    null
+  );
+
+  // Define handleEmojiClick and handleKeyDown before they're used
+  const handleEmojiClick = (emojiObject: any) => {
+    setInput((prev) => prev + emojiObject.emoji);
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === "Enter" && !e.shiftKey) {
+      e.preventDefault();
+      handleSend();
+    }
+  };
+
+  // Add a function to handle attachment selection
+  const handleAttachmentSelect = (
+    event: React.ChangeEvent<HTMLInputElement>
+  ) => {
+    if (event.target.files && event.target.files.length > 0) {
+      const file = event.target.files[0];
+      setAttachment(file);
+
+      // Create a preview for the attachment
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        setAttachmentPreview(e.target?.result as string);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  // Add a function to clear the attachment
+  const clearAttachment = () => {
+    setAttachment(null);
+    setAttachmentPreview(null);
+  };
 
   // Fetch conversations on mount
   useEffect(() => {
@@ -147,33 +192,47 @@ const Messages: React.FC = () => {
     );
   }, [unreadCounts]);
 
-  const handleSend = () => {
-    if (selected !== null && input.trim() && user) {
+  // Update the handleSend function
+  const handleSend = async () => {
+    if (selected !== null && (input.trim() || attachment) && user) {
+      let attachmentUrl = "";
+
+      // Upload attachment if exists
+      if (attachment) {
+        try {
+          const response = await messageService.uploadAttachment(attachment);
+          attachmentUrl = response.data.url;
+          console.log("📎 Uploaded attachment:", attachmentUrl);
+        } catch (error) {
+          console.error("Error uploading attachment:", error);
+          return toast.error("Failed to upload attachment");
+        }
+      }
+
       console.log(
-        `📤 Sending message from ${user.id} to ${selected}: "${input.trim()}"`
+        `📤 Sending message from ${
+          user.id
+        } to ${selected}: "${input.trim()}" with attachment: ${attachmentUrl}`
       );
-      sendMessage(selected, input.trim());
-      setMessages((prev) => [
-        ...prev,
-        {
-          from: Number(user.id),
-          to: Number(selected),
-          message: input.trim(),
-        },
-      ]);
-      setInput("");
-      setShowEmojiPicker(false);
-    }
-  };
 
-  const handleEmojiClick = (emojiObject: any) => {
-    setInput((prev) => prev + emojiObject.emoji);
-  };
+      // Only proceed if we have a message or a successful attachment upload
+      if (input.trim() || attachmentUrl) {
+        sendMessage(selected, input.trim(), attachmentUrl);
 
-  const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === "Enter" && !e.shiftKey) {
-      e.preventDefault();
-      handleSend();
+        setMessages((prev) => [
+          ...prev,
+          {
+            from: Number(user.id),
+            to: Number(selected),
+            message: input.trim(),
+            attachmentUrl: attachmentUrl || undefined,
+          },
+        ]);
+
+        setInput("");
+        clearAttachment();
+        setShowEmojiPicker(false);
+      }
     }
   };
 
@@ -244,6 +303,28 @@ const Messages: React.FC = () => {
                           : "bg-dark-700 text-white"
                       }`}
                     >
+                      {msg.attachmentUrl && (
+                        <div className="mb-2">
+                          <a
+                            href={getThumbnailUrl(msg.attachmentUrl)}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                          >
+                            <img
+                              src={getThumbnailUrl(msg.attachmentUrl)}
+                              alt="Attachment"
+                              className="max-w-full rounded-lg cursor-pointer"
+                              onError={(e) => {
+                                console.error(
+                                  "Image failed to load:",
+                                  msg.attachmentUrl
+                                );
+                                e.currentTarget.style.display = "none";
+                              }}
+                            />
+                          </a>
+                        </div>
+                      )}
                       {msg.message}
                     </div>
                   </div>
@@ -262,6 +343,36 @@ const Messages: React.FC = () => {
         </div>
         {selected && (
           <div className="p-4 border-t border-dark-700">
+            {/* Attachment preview */}
+            {attachmentPreview && (
+              <div className="mb-2 relative">
+                <img
+                  src={attachmentPreview}
+                  alt="Attachment preview"
+                  className="max-h-32 rounded-lg"
+                />
+                <button
+                  className="absolute top-1 right-1 bg-dark-800 text-white rounded-full p-1"
+                  onClick={clearAttachment}
+                >
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    width="16"
+                    height="16"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  >
+                    <line x1="18" y1="6" x2="6" y2="18"></line>
+                    <line x1="6" y1="6" x2="18" y2="18"></line>
+                  </svg>
+                </button>
+              </div>
+            )}
+
             {/* Input Area with relative positioning for emoji picker */}
             <div className="flex items-center relative">
               <input
@@ -271,6 +382,30 @@ const Messages: React.FC = () => {
                 onKeyDown={handleKeyDown}
                 placeholder="Type your message..."
               />
+
+              {/* Attachment button */}
+              <label className="bg-dark-700 hover:bg-dark-600 text-gray-400 hover:text-white px-3 py-2 border-l border-dark-600 cursor-pointer">
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  width="20"
+                  height="20"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                >
+                  <path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"></path>
+                </svg>
+                <input
+                  type="file"
+                  className="hidden"
+                  accept="image/*"
+                  onChange={handleAttachmentSelect}
+                />
+              </label>
+
               <div className="relative">
                 <button
                   className="bg-dark-700 hover:bg-dark-600 text-gray-400 hover:text-white px-3 py-2 border-l border-dark-600"
@@ -289,10 +424,11 @@ const Messages: React.FC = () => {
                   </div>
                 )}
               </div>
+
               <button
                 className="bg-primary-500 hover:bg-primary-600 text-white px-4 py-2 rounded-r-lg flex items-center gap-2 transition-colors cursor-pointer"
                 onClick={handleSend}
-                disabled={!input.trim()}
+                disabled={!input.trim() && !attachment}
               >
                 <Send size={18} />
                 <span>Send</span>

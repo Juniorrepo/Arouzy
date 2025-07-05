@@ -28,14 +28,14 @@ var wsClients = struct {
 	clients map[int]*wsConn
 }{clients: make(map[int]*wsConn)}
 
-// Message format
-// {type: "message", to: userId, message: string}
+// Update the message format
 type wsMessage struct {
-	Type    string `json:"type"`
-	To      int    `json:"to"`
-	Message string `json:"message"`
-	From    int    `json:"from,omitempty"`
-	Unread  int    `json:"unread,omitempty"`
+	Type         string `json:"type"`
+	To           int    `json:"to"`
+	Message      string `json:"message"`
+	AttachmentURL string `json:"attachmentUrl,omitempty"`
+	From         int    `json:"from,omitempty"`
+	Unread       int    `json:"unread,omitempty"`
 }
 
 // In-memory unread count (for demo; use DB in prod)
@@ -163,11 +163,11 @@ func WebSocketHandler(w http.ResponseWriter, r *http.Request) {
 		if err := json.Unmarshal(msgBytes, &msg); err != nil {
 			continue
 		}
-		if msg.Type == "message" && msg.To != 0 && msg.Message != "" {
+		if msg.Type == "message" && msg.To != 0 && (msg.Message != "" || msg.AttachmentURL != "") {
 			log.Printf("Received message from user %d to user %d: %s", userID, msg.To, msg.Message)
 			
 			// Save message to database
-			if err := SaveMessage(userID, msg.To, msg.Message); err != nil {
+			if err := SaveMessage(userID, msg.To, msg.Message, msg.AttachmentURL); err != nil {
 				log.Printf("Error saving message to database: %v", err)
 				continue
 			}

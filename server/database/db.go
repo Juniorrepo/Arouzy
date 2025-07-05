@@ -219,6 +219,7 @@ func initializeSchema(ctx context.Context, pool *pgxpool.Pool) error {
 			from_user_id INTEGER REFERENCES users(id),
 			to_user_id INTEGER REFERENCES users(id),
 			message TEXT NOT NULL,
+			attachment_url TEXT,
 			created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
 			read_at TIMESTAMP WITH TIME ZONE NULL
 		)

@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"context"
+	"database/sql" // Added this import
 	"encoding/json"
 	"log"
 	"net/http"
@@ -12,13 +13,15 @@ import (
 	"project/server/models"
 )
 
+// Update the ChatMessage struct to include attachment
 type ChatMessage struct {
-	ID        int       `json:"id"`
-	From      int       `json:"from"`
-	To        int       `json:"to"`
-	Message   string    `json:"message"`
-	Timestamp time.Time `json:"timestamp"`
-	ReadAt    *time.Time `json:"readAt,omitempty"`
+	ID           int       `json:"id"`
+	From         int       `json:"from"`
+	To           int       `json:"to"`
+	Message      string    `json:"message"`
+	AttachmentURL string    `json:"attachmentUrl,omitempty"`
+	Timestamp    time.Time `json:"timestamp"`
+	ReadAt       *time.Time `json:"readAt,omitempty"`
 }
 
 type Conversation struct {
@@ -30,12 +33,12 @@ type Conversation struct {
 }
 
 // SaveMessage saves a message to the database
-func SaveMessage(fromUserID, toUserID int, message string) error {
+func SaveMessage(fromUserID, toUserID int, message string, attachmentURL string) error {
 	ctx := context.Background()
 	_, err := database.DBPool.Exec(ctx, `
-		INSERT INTO messages (from_user_id, to_user_id, message)
-		VALUES ($1, $2, $3)
-	`, fromUserID, toUserID, message)
+		INSERT INTO messages (from_user_id, to_user_id, message, attachment_url)
+		VALUES ($1, $2, $3, $4)
+	`, fromUserID, toUserID, message, attachmentURL)
 	return err
 }
 
@@ -132,7 +135,7 @@ func GetMessageHistory(userID, otherUserID int) ([]ChatMessage, error) {
 	ctx := context.Background()
 	
 	rows, err := database.DBPool.Query(ctx, `
-		SELECT id, from_user_id, to_user_id, message, created_at, read_at
+		SELECT id, from_user_id, to_user_id, message, attachment_url, created_at, read_at
 		FROM messages
 		WHERE (from_user_id = $1 AND to_user_id = $2) OR (from_user_id = $2 AND to_user_id = $1)
 		ORDER BY created_at ASC
@@ -147,13 +150,17 @@ func GetMessageHistory(userID, otherUserID int) ([]ChatMessage, error) {
 	for rows.Next() {
 		var msg ChatMessage
 		var readAt *time.Time
+		var attachmentURL sql.NullString
 		
-		err := rows.Scan(&msg.ID, &msg.From, &msg.To, &msg.Message, &msg.Timestamp, &readAt)
+		err := rows.Scan(&msg.ID, &msg.From, &msg.To, &msg.Message, &attachmentURL, &msg.Timestamp, &readAt)
 		if err != nil {
 			log.Printf("Error scanning message: %v", err)
 			continue
 		}
 		
+		if attachmentURL.Valid {
+			msg.AttachmentURL = attachmentURL.String
+		}
 		msg.ReadAt = readAt
 		messages = append(messages, msg)
 	}

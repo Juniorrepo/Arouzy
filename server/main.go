@@ -102,6 +102,7 @@ func main() {
 	messagesRouter := apiRouter.PathPrefix("/messages").Subrouter()
 	messagesRouter.HandleFunc("/conversations", middleware.AuthMiddleware(handlers.ListConversationsHandler)).Methods("GET")
 	messagesRouter.HandleFunc("/history", middleware.AuthMiddleware(handlers.GetMessageHistoryHandler)).Methods("GET")
+	messagesRouter.HandleFunc("/attachment", middleware.AuthMiddleware(handlers.MessageAttachmentHandler)).Methods("POST", "OPTIONS")
 
 	// WebSocket endpoint for real-time messaging
 	router.HandleFunc("/ws", handlers.WebSocketHandler)

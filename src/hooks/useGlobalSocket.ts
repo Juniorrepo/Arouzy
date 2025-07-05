@@ -1,10 +1,12 @@
 import { useEffect, useRef, useState, useCallback } from "react";
 
+// Update the MessageData interface
 interface MessageData {
   type: "message";
   from: number;
   to: number;
   message: string;
+  attachmentUrl?: string;
 }
 
 interface UnreadCountsData {
@@ -71,10 +73,11 @@ export function useGlobalSocket(token: string | null) {
     };
   }, [token]);
 
+  // Update the sendMessage function
   const sendMessage = useCallback(
-    (to: number, message: string) => {
+    (to: number, message: string, attachmentUrl?: string) => {
       if (socket) {
-        const messageData = { type: "message", to, message };
+        const messageData = { type: "message", to, message, attachmentUrl };
         console.log("📤 Sending message:", messageData);
         socket.send(JSON.stringify(messageData));
       } else {
