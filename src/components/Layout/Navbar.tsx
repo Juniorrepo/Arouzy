@@ -149,7 +149,7 @@ const Navbar: React.FC = () => {
 
                 {/* Profile Dropdown */}
                 {isProfileMenuOpen && (
-                  <div className="absolute right-0 mt-2 w-48 bg-dark-800 rounded-md shadow-lg py-1 z-10 animate-fade-in">
+                  <div className="absolute right-0 mt-2 w-48 bg-dark-800 rounded-md shadow-lg py-1 z-50 animate-fade-in">
                     <Link
                       to={`/profile/${user?.username}`}
                       className="block px-4 py-2 text-sm text-white hover:bg-dark-700"
