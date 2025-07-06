@@ -25,7 +25,7 @@ const Footer: React.FC = () => {
           <div className="lg:col-span-1">
             <div className="flex items-center mb-4">
               <img
-                src={"./logo.svg"}
+                src={"/logo.svg"}
                 alt="Arouzy"
                 className="w-8 h-8 mr-2 cursor-pointer"
               />
