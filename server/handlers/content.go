@@ -139,6 +139,28 @@ func GetContentHandler(w http.ResponseWriter, r *http.Request) {
 		}
 
 		item.CreatedAt = createdAt.Format(time.RFC3339)
+		
+		// Get images for this content item
+		imageRows, err := database.DBPool.Query(ctx,
+			`SELECT id, image_url, image_order 
+			FROM content_images 
+			WHERE content_id = $1 
+			ORDER BY image_order ASC, id ASC 
+			LIMIT 4`, // Limit to first 4 images for preview
+			item.ID,
+		)
+		if err == nil {
+			defer imageRows.Close()
+			var images []models.Image
+			for imageRows.Next() {
+				var image models.Image
+				if err := imageRows.Scan(&image.ID, &image.ImageURL, &image.ImageOrder); err == nil {
+					images = append(images, image)
+				}
+			}
+			item.Images = images
+		}
+		
 		contentItems = append(contentItems, item)
 	}
 
@@ -246,6 +268,33 @@ func GetContentByIdHandler(w http.ResponseWriter, r *http.Request) {
 
 	item.Tags = tags
 
+	// Get all images for the content
+	imageRows, err := database.DBPool.Query(ctx,
+		`SELECT id, image_url, image_order 
+		FROM content_images 
+		WHERE content_id = $1 
+		ORDER BY image_order ASC, id ASC`,
+		contentID,
+	)
+	if err != nil {
+		http.Error(w, "Error getting images", http.StatusInternalServerError)
+		return
+	}
+	defer imageRows.Close()
+
+	var images []models.Image
+	for imageRows.Next() {
+		var image models.Image
+		if err := imageRows.Scan(&image.ID, &image.ImageURL, &image.ImageOrder); err != nil {
+			http.Error(w, "Error parsing images", http.StatusInternalServerError)
+			return
+		}
+		images = append(images, image)
+	}
+
+	// Ensure images are properly assigned
+	item.Images = images
+
 	// Return response
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(item)
@@ -326,6 +375,22 @@ func CreateContentHandler(w http.ResponseWriter, r *http.Request) {
 
 			if err != nil {
 				http.Error(w, "Error linking content to tags", http.StatusInternalServerError)
+				return
+			}
+		}
+	}
+
+	// Handle images if provided
+	if len(req.Images) > 0 {
+		for i, imageURL := range req.Images {
+			_, err = tx.Exec(ctx,
+				`INSERT INTO content_images (content_id, image_url, image_order) 
+				VALUES ($1, $2, $3)`,
+				contentID, imageURL, i,
+			)
+
+			if err != nil {
+				http.Error(w, "Error saving images", http.StatusInternalServerError)
 				return
 			}
 		}

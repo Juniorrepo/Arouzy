@@ -12,6 +12,7 @@ type ContentItem struct {
 	Upvotes     int    `json:"upvotes"`
 	User        User   `json:"user,omitempty"`
 	Tags        []Tag  `json:"tags,omitempty"`
+	Images      []Image `json:"images,omitempty"`
 }
 
 // Pagination represents pagination metadata
@@ -42,6 +43,7 @@ type CreateContentRequest struct {
 	VideoCount   int      `json:"videoCount"`
 	ThumbnailURL string   `json:"thumbnailUrl,omitempty"`
 	Tags         []string `json:"tags,omitempty"`
+	Images       []string `json:"images,omitempty"`
 }
 
 // CreateContentResponse represents the response after content creation
@@ -111,4 +113,11 @@ type SaveToCollectionRequest struct {
 type CollectionResponse struct {
 	Collections []Collection `json:"collections"`
 	Pagination  Pagination   `json:"pagination"`
+}
+
+// Image represents a single image in content
+type Image struct {
+	ID        int    `json:"id"`
+	ImageURL  string `json:"imageUrl"`
+	ImageOrder int   `json:"imageOrder"`
 }

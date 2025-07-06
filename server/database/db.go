@@ -117,6 +117,29 @@ func initializeSchema(ctx context.Context, pool *pgxpool.Pool) error {
 		return fmt.Errorf("error creating content_tags table: %v", err)
 	}
 
+	// Create content_images table to store all images for each content
+	_, err = pool.Exec(ctx, `
+		CREATE TABLE IF NOT EXISTS content_images (
+			id SERIAL PRIMARY KEY,
+			content_id INTEGER REFERENCES content(id) ON DELETE CASCADE,
+			image_url VARCHAR(500) NOT NULL,
+			image_order INTEGER DEFAULT 0,
+			created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+		)
+	`)
+	if err != nil {
+		return fmt.Errorf("error creating content_images table: %v", err)
+	}
+
+	// Create index for content_images
+	_, err = pool.Exec(ctx, `
+		CREATE INDEX IF NOT EXISTS idx_content_images_content_id ON content_images(content_id);
+		CREATE INDEX IF NOT EXISTS idx_content_images_order ON content_images(content_id, image_order);
+	`)
+	if err != nil {
+		return fmt.Errorf("error creating content_images indexes: %v", err)
+	}
+
 	// Create upvotes table
 	_, err = pool.Exec(ctx, `
 		CREATE TABLE IF NOT EXISTS upvotes (

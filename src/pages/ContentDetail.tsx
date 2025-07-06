@@ -12,6 +12,8 @@ import {
   Clock,
   Eye,
   MessageCircle,
+  LayoutGrid,
+  List as ListIcon,
 } from "lucide-react";
 import { contentService } from "../services/api";
 import {
@@ -39,6 +41,11 @@ interface ContentDetail {
     id: number;
     name: string;
   }>;
+  images?: Array<{
+    id: number;
+    imageUrl: string;
+    imageOrder: number;
+  }>;
 }
 
 const ContentDetail: React.FC = () => {
@@ -48,12 +55,21 @@ const ContentDetail: React.FC = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isUpvoted, setIsUpvoted] = useState<boolean>(false);
+  const [viewMode, setViewMode] = useState<"grid" | "list">("list");
 
   useEffect(() => {
     if (id) {
       fetchContentDetail();
     }
   }, [id]);
+
+  useEffect(() => {
+    if (content && content.images && content.images.length > 1) {
+      setViewMode("grid");
+    } else {
+      setViewMode("list");
+    }
+  }, [content]);
 
   const fetchContentDetail = async () => {
     setIsLoading(true);
@@ -194,48 +210,96 @@ const ContentDetail: React.FC = () => {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* Left Column - Media */}
           <div className="lg:col-span-2">
-            {/* Main Image/Video */}
-            <div className="bg-dark-800 rounded-xl overflow-hidden mb-6">
-              <div className="relative aspect-video">
-                {isImage ? (
-                  <img
-                    src={thumbnailUrl}
-                    alt={content.title}
-                    className="w-full h-full object-cover"
-                    onError={(e) => {
-                      const target = e.target as HTMLImageElement;
-                      target.style.display = "none";
-                      target.parentElement!.style.background =
-                        getFallbackGradient();
-                    }}
-                  />
-                ) : (
+            {/* Grid/List Toggle */}
+            <div className="flex justify-end mb-2">
+              <button
+                className={`p-2 rounded-full mr-2 ${
+                  viewMode === "list"
+                    ? "bg-dark-600 text-primary-400"
+                    : "bg-dark-700 text-gray-400 hover:bg-dark-600"
+                }`}
+                onClick={() => setViewMode("list")}
+                title="List view"
+              >
+                <ListIcon className="w-5 h-5" />
+              </button>
+              <button
+                className={`p-2 rounded-full ${
+                  viewMode === "grid"
+                    ? "bg-dark-600 text-primary-400"
+                    : "bg-dark-700 text-gray-400 hover:bg-dark-600"
+                }`}
+                onClick={() => setViewMode("grid")}
+                title="Grid view"
+              >
+                <LayoutGrid className="w-5 h-5" />
+              </button>
+            </div>
+            {/* Media Section */}
+            {content.images &&
+            content.images.length > 0 &&
+            viewMode === "grid" ? (
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+                {content.images.map((img) => (
                   <div
-                    className="w-full h-full"
-                    style={{ background: content.thumbnail }}
-                  />
-                )}
-
-                {/* Media Count Overlay */}
-                <div className="absolute top-4 left-4 flex space-x-2">
-                  {content.imageCount > 0 && (
-                    <div className="flex items-center bg-black/70 px-3 py-1.5 rounded-full text-white text-sm">
-                      <Image className="w-4 h-4 mr-1" />
-                      {content.imageCount} images
-                    </div>
+                    key={img.id}
+                    className="aspect-square bg-dark-800 rounded-xl overflow-hidden flex items-center justify-center"
+                  >
+                    <img
+                      src={getThumbnailUrl(img.imageUrl)}
+                      alt={content.title}
+                      className="w-full h-full object-cover transition-transform duration-200 hover:scale-105 rounded-xl cursor-pointer"
+                      onError={(e) => {
+                        const target = e.target as HTMLImageElement;
+                        target.style.display = "none";
+                        target.parentElement!.style.background =
+                          getFallbackGradient();
+                      }}
+                    />
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="bg-dark-800 rounded-xl overflow-hidden mb-6">
+                <div className="relative aspect-video">
+                  {isImage ? (
+                    <img
+                      src={thumbnailUrl}
+                      alt={content.title}
+                      className="w-full h-full object-cover"
+                      onError={(e) => {
+                        const target = e.target as HTMLImageElement;
+                        target.style.display = "none";
+                        target.parentElement!.style.background =
+                          getFallbackGradient();
+                      }}
+                    />
+                  ) : (
+                    <div
+                      className="w-full h-full"
+                      style={{ background: content.thumbnail }}
+                    />
                   )}
-                  {content.videoCount > 0 && (
-                    <div className="flex items-center bg-black/70 px-3 py-1.5 rounded-full text-white text-sm">
-                      <Video className="w-4 h-4 mr-1" />
-                      {content.videoCount} videos
-                    </div>
-                  )}
+                  {/* Media Count Overlay */}
+                  <div className="absolute top-4 left-4 flex space-x-2">
+                    {content.imageCount > 0 && (
+                      <div className="flex items-center bg-black/70 px-3 py-1.5 rounded-full text-white text-sm">
+                        <Image className="w-4 h-4 mr-1" />
+                        {content.imageCount} images
+                      </div>
+                    )}
+                    {content.videoCount > 0 && (
+                      <div className="flex items-center bg-black/70 px-3 py-1.5 rounded-full text-white text-sm">
+                        <Video className="w-4 h-4 mr-1" />
+                        {content.videoCount} videos
+                      </div>
+                    )}
+                  </div>
                 </div>
               </div>
-            </div>
-
+            )}
             {/* Action Buttons */}
-            <div className="flex items-center justify-between mb-6">
+            <div className="flex items-center justify-between mb-6 mt-3">
               <div className="flex items-center space-x-4">
                 <button
                   onClick={handleUpvote}
