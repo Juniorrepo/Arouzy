@@ -1,11 +1,9 @@
-import React, { useState, useRef, useEffect } from "react";
+import React, { useState, useRef } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../../contexts/AuthContext";
 import { useSearch } from "../../contexts/SearchContext";
 import { Search, Menu, X, User, LogOut, MessageCircle } from "lucide-react";
 import SearchSuggestions from "../Content/SearchSuggestions";
-import { contentService } from "../../services/api";
-import { ContentItem } from "../../pages/Home";
 import { useSocket } from "../../contexts/SocketContext";
 
 const Navbar: React.FC = () => {
@@ -17,31 +15,10 @@ const Navbar: React.FC = () => {
   const [showSearchSuggestions, setShowSearchSuggestions] =
     useState<boolean>(false);
   const searchInputRef = useRef<HTMLInputElement>(null);
-  const [dynamicContent, setDynamicContent] = useState<ContentItem[]>([]);
-  const [isLoadingContent, setIsLoadingContent] = useState<boolean>(false);
 
   // Add global socket for unread messages
   const { unreadCounts } = useSocket();
   const totalUnread = Object.values(unreadCounts).reduce((a, b) => a + b, 0);
-
-  // Fetch content for search suggestions
-  useEffect(() => {
-    const fetchContentForSuggestions = async () => {
-      setIsLoadingContent(true);
-      try {
-        const response = await contentService.getContent(1, "hot", {});
-        setDynamicContent(response.data.content || []);
-      } catch (error) {
-        console.error("Error fetching content for suggestions:", error);
-        // Fallback to empty array if API fails
-        setDynamicContent([]);
-      } finally {
-        setIsLoadingContent(false);
-      }
-    };
-
-    fetchContentForSuggestions();
-  }, []);
 
   const toggleMenu = () => setIsMenuOpen(!isMenuOpen);
   const toggleProfileMenu = () => setIsProfileMenuOpen(!isProfileMenuOpen);
@@ -112,10 +89,8 @@ const Navbar: React.FC = () => {
             {/* Search Suggestions */}
             <SearchSuggestions
               searchQuery={searchQuery}
-              content={dynamicContent}
               isVisible={showSearchSuggestions}
               onSelect={() => setShowSearchSuggestions(false)}
-              isLoading={isLoadingContent}
             />
           </div>
         </div>
@@ -237,10 +212,8 @@ const Navbar: React.FC = () => {
                 {/* Mobile Search Suggestions */}
                 <SearchSuggestions
                   searchQuery={searchQuery}
-                  content={dynamicContent}
                   isVisible={showSearchSuggestions}
                   onSelect={() => setShowSearchSuggestions(false)}
-                  isLoading={isLoadingContent}
                 />
               </div>
             </div>

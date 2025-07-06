@@ -43,11 +43,18 @@ const Home: React.FC = () => {
   const [totalPages, setTotalPages] = useState(1);
   const [activeSort, setActiveSort] = useState<SortOption>("hot");
   const [filters, setFilters] = useState<Filters>({});
-  const { searchQuery, performSearch, isSearching } = useSearch();
+  const { searchQuery, searchResults, isSearching } = useSearch();
 
   useEffect(() => {
-    fetchContent();
-  }, [currentPage, activeSort, filters]);
+    if (searchQuery.trim()) {
+      // Use search results when there's a search query
+      setContent(searchResults);
+      setTotalPages(1); // Search results don't have pagination for now
+    } else {
+      // Fetch regular content when no search query
+      fetchContent();
+    }
+  }, [currentPage, activeSort, filters, searchQuery, searchResults]);
 
   const fetchContent = async () => {
     setIsLoading(true);
@@ -199,9 +206,6 @@ const Home: React.FC = () => {
     }));
   };
 
-  // Apply search filter to content
-  const filteredContent = performSearch(content, searchQuery);
-
   return (
     <div className="max-w-7xl mx-auto px-4 py-6">
       <FilterBar
@@ -221,11 +225,10 @@ const Home: React.FC = () => {
                 Search results for "{searchQuery}"
               </span>
               <span className="text-gray-400">
-                ({filteredContent.length}{" "}
-                {filteredContent.length === 1 ? "result" : "results"})
+                ({content.length} {content.length === 1 ? "result" : "results"})
               </span>
             </div>
-            {filteredContent.length === 0 && (
+            {content.length === 0 && (
               <span className="text-gray-400 text-sm">
                 No content found matching your search
               </span>
@@ -240,7 +243,7 @@ const Home: React.FC = () => {
         </div>
       ) : (
         <>
-          <ContentGrid content={filteredContent} />
+          <ContentGrid content={content} />
           {!isSearching && (
             <Pagination
               currentPage={currentPage}

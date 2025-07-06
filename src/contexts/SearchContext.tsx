@@ -1,17 +1,24 @@
-import React, { createContext, useContext, useState, useCallback } from "react";
+import React, {
+  createContext,
+  useContext,
+  useState,
+  useCallback,
+  useEffect,
+  useRef,
+} from "react";
 import { ContentItem } from "../pages/Home";
+import { searchService } from "../services/api";
 
 interface SearchContextType {
   searchQuery: string;
   setSearchQuery: (query: string) => void;
   searchResults: ContentItem[];
+  searchSuggestions: ContentItem[];
   isSearching: boolean;
-  performSearch: (content: ContentItem[], query: string) => ContentItem[];
+  isSearchingSuggestions: boolean;
+  performSearch: (query: string, page?: number) => Promise<void>;
   clearSearch: () => void;
-  getSearchSuggestions: (
-    query: string,
-    content: ContentItem[]
-  ) => ContentItem[];
+  getSearchSuggestions: (query: string) => Promise<void>;
 }
 
 const SearchContext = createContext<SearchContextType | undefined>(undefined);
@@ -29,114 +36,119 @@ export const SearchProvider: React.FC<{ children: React.ReactNode }> = ({
 }) => {
   const [searchQuery, setSearchQuery] = useState("");
   const [searchResults, setSearchResults] = useState<ContentItem[]>([]);
+  const [searchSuggestions, setSearchSuggestions] = useState<ContentItem[]>([]);
   const [isSearching, setIsSearching] = useState(false);
+  const [isSearchingSuggestions, setIsSearchingSuggestions] = useState(false);
 
-  const performSearch = useCallback(
-    (content: ContentItem[], query: string): ContentItem[] => {
-      if (!query.trim()) {
-        return content;
-      }
+  // Debounce refs
+  const searchTimeoutRef = useRef<number>();
+  const suggestionsTimeoutRef = useRef<number>();
 
-      const searchTerm = query.toLowerCase().trim();
+  const performSearch = useCallback(async (query: string, page: number = 1) => {
+    if (!query.trim()) {
+      setSearchResults([]);
+      setIsSearching(false);
+      return;
+    }
 
-      return content.filter((item) => {
-        // Search in title
-        if (item.title.toLowerCase().includes(searchTerm)) {
-          return true;
-        }
+    setIsSearching(true);
+    try {
+      const response = await searchService.searchContent(query, page);
+      setSearchResults(response.data.content || []);
+    } catch (error) {
+      console.error("Error performing search:", error);
+      setSearchResults([]);
+    } finally {
+      setIsSearching(false);
+    }
+  }, []);
 
-        // Search in description (if available)
-        if (
-          item.description &&
-          item.description.toLowerCase().includes(searchTerm)
-        ) {
-          return true;
-        }
+  const getSearchSuggestions = useCallback(async (query: string) => {
+    if (!query.trim()) {
+      setSearchSuggestions([]);
+      setIsSearchingSuggestions(false);
+      return;
+    }
 
-        // Search in tags (if available)
-        if (
-          item.tags &&
-          item.tags.some((tag) => tag.name.toLowerCase().includes(searchTerm))
-        ) {
-          return true;
-        }
-
-        // Search in username (if available)
-        if (
-          item.user &&
-          item.user.username.toLowerCase().includes(searchTerm)
-        ) {
-          return true;
-        }
-
-        return false;
-      });
-    },
-    []
-  );
+    setIsSearchingSuggestions(true);
+    try {
+      const response = await searchService.getSearchSuggestions(query);
+      setSearchSuggestions(response.data.content || []);
+    } catch (error) {
+      console.error("Error getting search suggestions:", error);
+      setSearchSuggestions([]);
+    } finally {
+      setIsSearchingSuggestions(false);
+    }
+  }, []);
 
   const clearSearch = useCallback(() => {
     setSearchQuery("");
     setSearchResults([]);
+    setSearchSuggestions([]);
     setIsSearching(false);
+    setIsSearchingSuggestions(false);
+
+    // Clear timeouts
+    if (searchTimeoutRef.current) {
+      clearTimeout(searchTimeoutRef.current);
+    }
+    if (suggestionsTimeoutRef.current) {
+      clearTimeout(suggestionsTimeoutRef.current);
+    }
   }, []);
 
-  const handleSetSearchQuery = useCallback((query: string) => {
-    setSearchQuery(query);
-    setIsSearching(query.trim().length > 0);
-  }, []);
+  const handleSetSearchQuery = useCallback(
+    (query: string) => {
+      setSearchQuery(query);
 
-  const getSearchSuggestions = useCallback(
-    (query: string, content: ContentItem[]): ContentItem[] => {
-      if (!query.trim()) {
-        return [];
+      // Clear existing timeouts
+      if (searchTimeoutRef.current) {
+        clearTimeout(searchTimeoutRef.current);
+      }
+      if (suggestionsTimeoutRef.current) {
+        clearTimeout(suggestionsTimeoutRef.current);
       }
 
-      const searchTerm = query.toLowerCase().trim();
+      if (query.trim()) {
+        // Debounce search suggestions (300ms)
+        suggestionsTimeoutRef.current = setTimeout(() => {
+          getSearchSuggestions(query);
+        }, 300);
 
-      return content
-        .filter((item) => {
-          // Search in title
-          if (item.title.toLowerCase().includes(searchTerm)) {
-            return true;
-          }
-
-          // Search in description (if available)
-          if (
-            item.description &&
-            item.description.toLowerCase().includes(searchTerm)
-          ) {
-            return true;
-          }
-
-          // Search in tags (if available)
-          if (
-            item.tags &&
-            item.tags.some((tag) => tag.name.toLowerCase().includes(searchTerm))
-          ) {
-            return true;
-          }
-
-          // Search in username (if available)
-          if (
-            item.user &&
-            item.user.username.toLowerCase().includes(searchTerm)
-          ) {
-            return true;
-          }
-
-          return false;
-        })
-        .slice(0, 5); // Limit to 5 suggestions
+        // Debounce full search (500ms)
+        searchTimeoutRef.current = setTimeout(() => {
+          performSearch(query);
+        }, 500);
+      } else {
+        setSearchResults([]);
+        setSearchSuggestions([]);
+        setIsSearching(false);
+        setIsSearchingSuggestions(false);
+      }
     },
-    []
+    [performSearch, getSearchSuggestions]
   );
+
+  // Cleanup timeouts on unmount
+  useEffect(() => {
+    return () => {
+      if (searchTimeoutRef.current) {
+        clearTimeout(searchTimeoutRef.current);
+      }
+      if (suggestionsTimeoutRef.current) {
+        clearTimeout(suggestionsTimeoutRef.current);
+      }
+    };
+  }, []);
 
   const value = {
     searchQuery,
     setSearchQuery: handleSetSearchQuery,
     searchResults,
+    searchSuggestions,
     isSearching,
+    isSearchingSuggestions,
     performSearch,
     clearSearch,
     getSearchSuggestions,

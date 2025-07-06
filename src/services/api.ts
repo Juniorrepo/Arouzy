@@ -56,6 +56,16 @@ export const contentService = {
   },
 };
 
+// Search API services
+export const searchService = {
+  searchContent: async (query: string, page = 1) => {
+    return api.get("/api/search/content", { params: { q: query, page } });
+  },
+  getSearchSuggestions: async (query: string) => {
+    return api.get("/api/search/suggestions", { params: { q: query } });
+  },
+};
+
 // Upload API services
 export const uploadService = {
   uploadFile: async (file: File) => {
@@ -208,13 +218,13 @@ export const messageService = {
   uploadAttachment: async (file: File) => {
     const formData = new FormData();
     formData.append("attachment", file);
-    
+
     return api.post("/api/messages/attachment", formData, {
       headers: {
         "Content-Type": "multipart/form-data",
       },
     });
-  }
+  },
 };
 
 // Types

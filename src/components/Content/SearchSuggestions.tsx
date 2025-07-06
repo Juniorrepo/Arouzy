@@ -1,46 +1,37 @@
 import React from "react";
 import { Link } from "react-router-dom";
 import { Search, Tag, User, Image, Video } from "lucide-react";
-import { ContentItem } from "../../pages/Home";
 import { useSearch } from "../../contexts/SearchContext";
 import { getThumbnailUrl } from "../../utils/imageUtils";
+import SkeletonLoader from "./SkeletonLoader";
 
 interface SearchSuggestionsProps {
   searchQuery: string;
-  content: ContentItem[];
   isVisible: boolean;
   onSelect: () => void;
-  isLoading?: boolean;
 }
 
 const SearchSuggestions: React.FC<SearchSuggestionsProps> = ({
   searchQuery,
-  content,
   isVisible,
   onSelect,
-  isLoading = false,
 }) => {
-  const { getSearchSuggestions } = useSearch();
+  const { searchSuggestions, isSearchingSuggestions } = useSearch();
 
   if (!isVisible || !searchQuery.trim()) {
     return null;
   }
 
-  // Show loading state
-  if (isLoading) {
+  // Show loading state with skeleton
+  if (isSearchingSuggestions) {
     return (
       <div className="absolute top-full left-0 right-0 mt-1 bg-dark-800 border border-dark-600 rounded-lg shadow-lg z-50">
-        <div className="p-4 text-center text-gray-400">
-          <div className="w-5 h-5 border-2 border-primary-500 border-t-transparent rounded-full animate-spin mx-auto mb-2"></div>
-          <p>Loading suggestions...</p>
-        </div>
+        <SkeletonLoader count={3} />
       </div>
     );
   }
 
-  const filteredContent = getSearchSuggestions(searchQuery, content);
-
-  if (filteredContent.length === 0) {
+  if (searchSuggestions.length === 0) {
     return (
       <div className="absolute top-full left-0 right-0 mt-1 bg-dark-800 border border-dark-600 rounded-lg shadow-lg z-50">
         <div className="p-4 text-center text-gray-400">
@@ -53,7 +44,7 @@ const SearchSuggestions: React.FC<SearchSuggestionsProps> = ({
 
   return (
     <div className="absolute top-full left-0 right-0 mt-1 bg-dark-800 border border-dark-600 rounded-lg shadow-lg z-50 max-h-96 overflow-y-auto">
-      {filteredContent.map((item) => (
+      {searchSuggestions.map((item) => (
         <Link
           key={item.id}
           to={`/content/${item.id}`}
@@ -143,7 +134,7 @@ const SearchSuggestions: React.FC<SearchSuggestionsProps> = ({
           onClick={onSelect}
           className="text-primary-400 hover:text-primary-300 text-sm font-medium"
         >
-          View all {filteredContent.length} results →
+          View all {searchSuggestions.length} results →
         </Link>
       </div>
     </div>
