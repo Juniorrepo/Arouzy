@@ -1,4 +1,4 @@
-import React, { useState, useRef } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../../contexts/AuthContext";
 import { useSearch } from "../../contexts/SearchContext";
@@ -15,10 +15,31 @@ const Navbar: React.FC = () => {
   const [showSearchSuggestions, setShowSearchSuggestions] =
     useState<boolean>(false);
   const searchInputRef = useRef<HTMLInputElement>(null);
+  const profileMenuRef = useRef<HTMLDivElement>(null);
 
   // Add global socket for unread messages
   const { unreadCounts } = useSocket();
   const totalUnread = Object.values(unreadCounts).reduce((a, b) => a + b, 0);
+
+  // Handle click outside profile menu
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (
+        profileMenuRef.current &&
+        !profileMenuRef.current.contains(event.target as Node)
+      ) {
+        setIsProfileMenuOpen(false);
+      }
+    };
+
+    if (isProfileMenuOpen) {
+      document.addEventListener("mousedown", handleClickOutside);
+    }
+
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, [isProfileMenuOpen]);
 
   const toggleMenu = () => setIsMenuOpen(!isMenuOpen);
   const toggleProfileMenu = () => setIsProfileMenuOpen(!isProfileMenuOpen);
@@ -112,7 +133,7 @@ const Navbar: React.FC = () => {
                   </span>
                 )}
               </button>
-              <div className="relative">
+              <div className="relative" ref={profileMenuRef}>
                 <button
                   onClick={toggleProfileMenu}
                   className="flex items-center space-x-2 text-white hover:text-primary-300 transition-colors focus:outline-none"
