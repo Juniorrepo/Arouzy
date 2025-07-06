@@ -61,6 +61,9 @@ func main() {
 	contentRouter.HandleFunc("", handlers.GetContentHandler).Methods("GET")
 	contentRouter.HandleFunc("/{id}", handlers.GetContentByIdHandler).Methods("GET")
 	contentRouter.HandleFunc("", middleware.AuthMiddleware(handlers.CreateContentHandler)).Methods("POST")
+	
+	// Tags route
+	apiRouter.HandleFunc("/tags", handlers.GetTagsHandler).Methods("GET")
 
 	// Search routes
 	searchRouter := apiRouter.PathPrefix("/search").Subrouter()

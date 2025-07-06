@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"net/http"
 	"strconv"
+	"strings"
 	"time"
 
 	"project/server/database"
@@ -77,10 +78,23 @@ func GetContentHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Filter by tags
-	if tags, ok := queryParams["tags"]; ok && len(tags) > 0 {
-		whereClause += fmt.Sprintf("AND c.id IN (SELECT content_id FROM content_tags ct JOIN tags t ON ct.tag_id = t.id WHERE t.name = ANY($%d)) ", argPosition)
-		args = append(args, tags)
-		argPosition++
+	if rawTags, ok := queryParams["tags"]; ok && len(rawTags) > 0 {
+		fmt.Printf("Raw tags from query: %v\n", rawTags)
+		var tags []string
+		for _, t := range rawTags {
+			for _, tag := range strings.Split(t, ",") {
+				tag = strings.TrimSpace(tag)
+				if tag != "" {
+					tags = append(tags, tag)
+				}
+			}
+		}
+		if len(tags) > 0 {
+			fmt.Printf("Processed tags: %v\n", tags)
+			whereClause += fmt.Sprintf("AND c.id IN (SELECT content_id FROM content_tags ct JOIN tags t ON ct.tag_id = t.id WHERE t.name = ANY($%d)) ", argPosition)
+			args = append(args, tags)
+			argPosition++
+		}
 	}
 
 	// Add ORDER BY based on sort parameter
@@ -412,4 +426,37 @@ func CreateContentHandler(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusCreated)
 	json.NewEncoder(w).Encode(response)
+}
+
+// GetTagsHandler retrieves all available tags
+func GetTagsHandler(w http.ResponseWriter, r *http.Request) {
+	// Create context with timeout
+	ctx, cancel := context.WithTimeout(r.Context(), 10*time.Second)
+	defer cancel()
+
+	// Query all tags
+	rows, err := database.DBPool.Query(ctx,
+		`SELECT id, name FROM tags ORDER BY name ASC`,
+	)
+	if err != nil {
+		http.Error(w, "Database error", http.StatusInternalServerError)
+		return
+	}
+	defer rows.Close()
+
+	var tags []models.Tag
+	for rows.Next() {
+		var tag models.Tag
+		if err := rows.Scan(&tag.ID, &tag.Name); err != nil {
+			http.Error(w, "Error parsing tags", http.StatusInternalServerError)
+			return
+		}
+		tags = append(tags, tag)
+	}
+
+	// Return response
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(map[string]interface{}{
+		"tags": tags,
+	})
 }

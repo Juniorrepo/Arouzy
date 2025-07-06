@@ -37,8 +37,57 @@ api.interceptors.response.use(
 
 // Content API services
 export const contentService = {
-  getContent: async (page = 1, sort = "hot", filters = {}) => {
-    return api.get("/api/content", { params: { page, sort, ...filters } });
+  getContent: async (
+    page = 1,
+    sort = "hot",
+    filters: { minUpvotes?: number; fromDate?: string; tags?: string[] } = {}
+  ) => {
+    // Format filters to match backend expectations
+    const params: any = { page, sort };
+
+    if (filters.minUpvotes) {
+      params.minUpvotes = filters.minUpvotes;
+    }
+
+    if (filters.fromDate) {
+      params.fromDate = filters.fromDate;
+    }
+
+    if (filters.tags && filters.tags.length > 0) {
+      // Pass tags as repeated parameters without brackets
+      filters.tags.forEach((tag: string) => {
+        if (!params.tags) {
+          params.tags = [];
+        }
+        params.tags.push(tag);
+      });
+    }
+
+    console.log("API Request params:", params);
+
+    // Use URLSearchParams to properly serialize arrays without brackets
+    const searchParams = new URLSearchParams();
+    searchParams.append("page", page.toString());
+    searchParams.append("sort", sort);
+
+    if (filters.minUpvotes) {
+      searchParams.append("minUpvotes", filters.minUpvotes.toString());
+    }
+
+    if (filters.fromDate) {
+      searchParams.append("fromDate", filters.fromDate);
+    }
+
+    if (filters.tags && filters.tags.length > 0) {
+      filters.tags.forEach((tag) => {
+        searchParams.append("tags", tag);
+      });
+    }
+
+    return api.get(`/api/content?${searchParams.toString()}`);
+  },
+  getTags: async () => {
+    return api.get("/api/tags");
   },
   getContentById: async (id: string) => {
     return api.get(`/api/content/${id}`);

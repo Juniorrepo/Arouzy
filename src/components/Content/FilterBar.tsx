@@ -1,9 +1,10 @@
-import React, { useState } from 'react';
-import { Calendar, Filter, ChevronDown, X } from 'lucide-react';
-import { motion, AnimatePresence } from 'framer-motion';
+import React, { useState, useEffect } from "react";
+import { Calendar, Filter, ChevronDown, X } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
+import { contentService } from "../../services/api";
 
 // Types
-type SortOption = 'hot' | 'top' | 'new' | 'shuffle';
+type SortOption = "hot" | "top" | "new" | "shuffle";
 
 interface Filters {
   tags?: string[];
@@ -18,14 +19,47 @@ interface FilterBarProps {
   onFilterChange: (filters: Filters) => void;
 }
 
-const FilterBar: React.FC<FilterBarProps> = ({ 
-  activeSort, 
+const FilterBar: React.FC<FilterBarProps> = ({
+  activeSort,
   onSortChange,
   filters,
-  onFilterChange
+  onFilterChange,
 }) => {
   const [isFilterOpen, setIsFilterOpen] = useState(false);
   const [tempFilters, setTempFilters] = useState<Filters>(filters);
+  const [availableTags, setAvailableTags] = useState<string[]>([]);
+  const [isLoadingTags, setIsLoadingTags] = useState(false);
+
+  // Fetch available tags on component mount
+  useEffect(() => {
+    const fetchTags = async () => {
+      setIsLoadingTags(true);
+      try {
+        const response = await contentService.getTags();
+        const tags = response.data.tags.map(
+          (tag: { id: number; name: string }) => tag.name
+        );
+        setAvailableTags(tags);
+      } catch (error) {
+        console.error("Error fetching tags:", error);
+        // Fallback to default tags if API fails
+        setAvailableTags([
+          "photography",
+          "art",
+          "nature",
+          "travel",
+          "food",
+          "music",
+          "sports",
+          "technology",
+        ]);
+      } finally {
+        setIsLoadingTags(false);
+      }
+    };
+
+    fetchTags();
+  }, []);
 
   const handleSortClick = (sort: SortOption) => {
     onSortChange(sort);
@@ -34,11 +68,12 @@ const FilterBar: React.FC<FilterBarProps> = ({
   const toggleFilterDropdown = () => {
     setIsFilterOpen(!isFilterOpen);
     if (!isFilterOpen) {
-      setTempFilters({...filters});
+      setTempFilters({ ...filters });
     }
   };
 
   const handleApplyFilter = () => {
+    console.log("Applying filters:", tempFilters);
     onFilterChange(tempFilters);
     setIsFilterOpen(false);
   };
@@ -50,17 +85,18 @@ const FilterBar: React.FC<FilterBarProps> = ({
   };
 
   const handleTempFilterChange = (key: keyof Filters, value: any) => {
-    setTempFilters(prev => ({
+    setTempFilters((prev) => ({
       ...prev,
-      [key]: value
+      [key]: value,
     }));
   };
-  
+
   // Count active filters
-  const activeFilterCount = Object.values(filters).filter(value => 
-    value !== undefined && 
-    (Array.isArray(value) ? value.length > 0 : true)
-  ).length;
+  const activeFilterCount = [
+    filters.tags && filters.tags.length > 0,
+    filters.minUpvotes && filters.minUpvotes > 0,
+    filters.fromDate && filters.fromDate !== "",
+  ].filter(Boolean).length;
 
   return (
     <div className="relative">
@@ -69,67 +105,73 @@ const FilterBar: React.FC<FilterBarProps> = ({
         {/* Sort Buttons */}
         <div className="flex space-x-1">
           <button
-            onClick={() => handleSortClick('hot')}
+            onClick={() => handleSortClick("hot")}
             className={`px-4 py-1.5 rounded-md transition-colors ${
-              activeSort === 'hot'
-                ? 'text-white border-b-2 border-primary-500'
-                : 'text-gray-400 hover:text-white'
+              activeSort === "hot"
+                ? "text-white border-b-2 border-primary-500"
+                : "text-gray-400 hover:text-white"
             }`}
           >
             Hot
           </button>
-          
+
           <button
-            onClick={() => handleSortClick('top')}
+            onClick={() => handleSortClick("top")}
             className={`px-4 py-1.5 rounded-md transition-colors ${
-              activeSort === 'top'
-                ? 'text-white border-b-2 border-primary-500'
-                : 'text-gray-400 hover:text-white'
+              activeSort === "top"
+                ? "text-white border-b-2 border-primary-500"
+                : "text-gray-400 hover:text-white"
             }`}
           >
             Top
           </button>
-          
+
           <button
-            onClick={() => handleSortClick('new')}
+            onClick={() => handleSortClick("new")}
             className={`px-4 py-1.5 rounded-md transition-colors ${
-              activeSort === 'new'
-                ? 'text-white border-b-2 border-primary-500'
-                : 'text-gray-400 hover:text-white'
+              activeSort === "new"
+                ? "text-white border-b-2 border-primary-500"
+                : "text-gray-400 hover:text-white"
             }`}
           >
             New
           </button>
-          
+
           <button
-            onClick={() => handleSortClick('shuffle')}
+            onClick={() => handleSortClick("shuffle")}
             className={`hidden sm:block px-4 py-1.5 rounded-md transition-colors ${
-              activeSort === 'shuffle'
-                ? 'text-white border-b-2 border-primary-500'
-                : 'text-gray-400 hover:text-white'
+              activeSort === "shuffle"
+                ? "text-white border-b-2 border-primary-500"
+                : "text-gray-400 hover:text-white"
             }`}
           >
             Shuffle
           </button>
         </div>
-        
+
         {/* Filter Button */}
         <button
           onClick={toggleFilterDropdown}
           className={`flex items-center space-x-1.5 px-3 py-1.5 rounded-full ${
             activeFilterCount > 0 || isFilterOpen
-              ? 'bg-primary-500 text-white'
-              : 'bg-dark-500 text-white hover:bg-dark-400'
+              ? "bg-primary-500 text-white"
+              : "bg-dark-500 text-white hover:bg-dark-400"
           } transition-colors`}
         >
           <Filter className="w-4 h-4" />
           <span className="text-sm font-medium">
-            {activeFilterCount > 0 ? `Filters (${activeFilterCount})` : 'Filters'}
+            {activeFilterCount > 0
+              ? `Filters (${activeFilterCount})`
+              : "Filters"}
           </span>
-          <ChevronDown className={`w-4 h-4 transition-transform ${isFilterOpen ? 'rotate-180' : ''}`} />
+          <ChevronDown
+            className={`w-4 h-4 transition-transform ${
+              isFilterOpen ? "rotate-180" : ""
+            }`}
+          />
         </button>
       </div>
-      
+
       {/* Filter Dropdown */}
       <AnimatePresence>
         {isFilterOpen && (
@@ -149,42 +191,59 @@ const FilterBar: React.FC<FilterBarProps> = ({
                 <X className="w-4 h-4" />
               </button>
             </div>
-            
+
             {/* Filter by Tags */}
             <div className="mb-4">
               <label className="block text-sm font-medium mb-2">Tags</label>
-              <div className="flex flex-wrap gap-2">
-                {['Teen', '18+', 'Artistic', 'Outdoors', 'Cosplay'].map(tag => (
-                  <button
-                    key={tag}
-                    onClick={() => {
-                      const currentTags = tempFilters.tags || [];
-                      const updatedTags = currentTags.includes(tag)
-                        ? currentTags.filter(t => t !== tag)
-                        : [...currentTags, tag];
-                      handleTempFilterChange('tags', updatedTags);
-                    }}
-                    className={`px-3 py-1 text-sm rounded-full ${
-                      tempFilters.tags?.includes(tag)
-                        ? 'bg-primary-500 text-white'
-                        : 'bg-dark-400 text-white hover:bg-dark-300'
-                    }`}
-                  >
-                    {tag}
-                  </button>
-                ))}
-              </div>
+              {isLoadingTags ? (
+                <div className="flex items-center justify-center py-4">
+                  <div className="w-4 h-4 border-2 border-primary-500 border-t-transparent rounded-full animate-spin"></div>
+                  <span className="ml-2 text-gray-400 text-sm">
+                    Loading tags...
+                  </span>
+                </div>
+              ) : (
+                <div className="flex flex-wrap gap-2">
+                  {availableTags.map((tag) => (
+                    <button
+                      key={tag}
+                      onClick={() => {
+                        const currentTags = tempFilters.tags || [];
+                        const updatedTags = currentTags.includes(tag)
+                          ? currentTags.filter((t) => t !== tag)
+                          : [...currentTags, tag];
+                        handleTempFilterChange("tags", updatedTags);
+                      }}
+                      className={`px-3 py-1 text-sm rounded-full ${
+                        tempFilters.tags?.includes(tag)
+                          ? "bg-primary-500 text-white"
+                          : "bg-dark-400 text-white hover:bg-dark-300"
+                      }`}
+                    >
+                      {tag}
+                    </button>
+                  ))}
+                </div>
+              )}
             </div>
-            
+
             {/* Filter by Upvotes */}
             <div className="mb-4">
-              <label htmlFor="minUpvotes" className="block text-sm font-medium mb-2">
+              <label
+                htmlFor="minUpvotes"
+                className="block text-sm font-medium mb-2"
+              >
                 Minimum Upvotes
               </label>
               <select
                 id="minUpvotes"
-                value={tempFilters.minUpvotes || ''}
-                onChange={(e) => handleTempFilterChange('minUpvotes', e.target.value ? Number(e.target.value) : undefined)}
+                value={tempFilters.minUpvotes || ""}
+                onChange={(e) =>
+                  handleTempFilterChange(
+                    "minUpvotes",
+                    e.target.value ? Number(e.target.value) : undefined
+                  )
+                }
                 className="w-full bg-dark-600 border border-dark-400 rounded-md px-3 py-2 text-white focus:outline-none focus:ring-2 focus:ring-primary-500"
               >
                 <option value="">Any</option>
@@ -194,24 +253,32 @@ const FilterBar: React.FC<FilterBarProps> = ({
                 <option value="500">500+</option>
               </select>
             </div>
-            
+
             {/* Filter by Date */}
             <div className="mb-6">
-              <label htmlFor="fromDate" className="block text-sm font-medium mb-2">
+              <label
+                htmlFor="fromDate"
+                className="block text-sm font-medium mb-2"
+              >
                 From Date
               </label>
               <div className="relative">
                 <input
                   id="fromDate"
                   type="date"
-                  value={tempFilters.fromDate || ''}
-                  onChange={(e) => handleTempFilterChange('fromDate', e.target.value || undefined)}
+                  value={tempFilters.fromDate || ""}
+                  onChange={(e) =>
+                    handleTempFilterChange(
+                      "fromDate",
+                      e.target.value || undefined
+                    )
+                  }
                   className="w-full bg-dark-600 border border-dark-400 rounded-md px-3 py-2 text-white focus:outline-none focus:ring-2 focus:ring-primary-500 pr-10"
                 />
                 <Calendar className="absolute right-3 top-2.5 text-gray-400 h-5 w-5" />
               </div>
             </div>
-            
+
             {/* Actions */}
             <div className="flex space-x-3">
               <button

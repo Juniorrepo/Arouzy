@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { Search } from "lucide-react";
 import ContentGrid from "../components/Content/ContentGrid";
 import FilterBar from "../components/Content/FilterBar";
@@ -45,18 +45,7 @@ const Home: React.FC = () => {
   const [filters, setFilters] = useState<Filters>({});
   const { searchQuery, searchResults, isSearching } = useSearch();
 
-  useEffect(() => {
-    if (searchQuery.trim()) {
-      // Use search results when there's a search query
-      setContent(searchResults);
-      setTotalPages(1); // Search results don't have pagination for now
-    } else {
-      // Fetch regular content when no search query
-      fetchContent();
-    }
-  }, [currentPage, activeSort, filters, searchQuery, searchResults]);
-
-  const fetchContent = async () => {
+  const fetchContent = useCallback(async () => {
     setIsLoading(true);
     try {
       const response = await contentService.getContent(
@@ -75,7 +64,18 @@ const Home: React.FC = () => {
       setTotalPages(5);
       setIsLoading(false);
     }
-  };
+  }, [currentPage, activeSort, filters]);
+
+  useEffect(() => {
+    if (searchQuery.trim()) {
+      // Use search results when there's a search query
+      setContent(searchResults);
+      setTotalPages(1); // Search results don't have pagination for now
+    } else {
+      // Fetch regular content when no search query
+      fetchContent();
+    }
+  }, [searchQuery, searchResults, fetchContent]);
 
   const handleSortChange = (sort: SortOption) => {
     setActiveSort(sort);
