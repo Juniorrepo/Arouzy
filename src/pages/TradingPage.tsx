@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import { tradingService } from "../services/api";
 import { useAuth } from "../contexts/AuthContext";
 import { getThumbnailUrl } from "../utils/imageUtils";
+import SkeletonLoader from "../components/Content/SkeletonLoader";
 
 interface TradingContent {
   id: number;
@@ -33,6 +34,7 @@ const TradingPage: React.FC = () => {
   const [modalError, setModalError] = useState<string | null>(null);
   const [modalSuccess, setModalSuccess] = useState(false);
   const [pendingRequestsCount, setPendingRequestsCount] = useState(0);
+  const [modalContentLoading, setModalContentLoading] = useState(false);
 
   useEffect(() => {
     const fetchTradingContent = async () => {
@@ -68,12 +70,15 @@ const TradingPage: React.FC = () => {
 
   // Fetch my trading content for modal
   const fetchMyTradingContent = async () => {
+    setModalContentLoading(true);
     try {
       const response = await tradingService.listMyTradingContent();
-      setMyTradingContent(response.data);
+      setMyTradingContent(response.data || []);
     } catch (err) {
       console.log(err);
       setMyTradingContent([]);
+    } finally {
+      setModalContentLoading(false);
     }
   };
 
@@ -151,8 +156,6 @@ const TradingPage: React.FC = () => {
           {tradingContent?.map((item) => {
             const isOwner = user && Number(user.id) === Number(item.userId);
             const canView = isOwner || item.hasAccess;
-            console.log(canView, "pppp");
-            console.log(item);
             return (
               <div
                 key={item.id}
@@ -228,7 +231,9 @@ const TradingPage: React.FC = () => {
               <div className="text-green-500 mb-2">Trade request sent!</div>
             )}
             <div className="mb-4 max-h-48 overflow-y-auto">
-              {myTradingContent?.length === 0 ? (
+              {modalContentLoading ? (
+                <SkeletonLoader count={3} />
+              ) : myTradingContent?.length === 0 ? (
                 <div className="text-gray-400 text-sm">
                   You have no trading content to offer.{" "}
                   <Link
@@ -272,7 +277,12 @@ const TradingPage: React.FC = () => {
             <button
               className="w-full py-2 bg-primary-500 text-white rounded-full font-semibold hover:bg-primary-600 transition-colors disabled:opacity-60"
               onClick={handleTradeSubmit}
-              disabled={modalLoading || !selectedOfferId || modalSuccess}
+              disabled={
+                modalLoading ||
+                !selectedOfferId ||
+                modalSuccess ||
+                modalContentLoading
+              }
             >
               {modalLoading ? "Sending..." : "Send Trade Request"}
             </button>
