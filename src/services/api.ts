@@ -2,6 +2,9 @@ import axios from "axios";
 
 // Define base URL for different environments
 const BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:8080";
+const CHAT_URL =
+  import.meta.env.VITE_CHAT_SERVER_URL ||
+  "https://efficient-wholeness-production.up.railway.app";
 
 export const api = axios.create({
   baseURL: BASE_URL,
@@ -277,7 +280,7 @@ export const collectionService = {
 export const chatService = {
   getConversations: async (userId: number) => {
     const res = await fetch(
-      `http://localhost:3001/messages/conversations?userId=${userId}`
+      `${CHAT_URL}/messages/conversations?userId=${userId}`
     );
     if (!res.ok) throw new Error("Failed to fetch conversations");
     return res.json();
@@ -285,7 +288,7 @@ export const chatService = {
   uploadAttachment: async (file: File) => {
     const formData = new FormData();
     formData.append("attachment", file);
-    const res = await fetch("http://localhost:3001/upload/attachment", {
+    const res = await fetch(`${CHAT_URL}/upload/attachment`, {
       method: "POST",
       body: formData,
     });
@@ -294,7 +297,7 @@ export const chatService = {
   },
   getMessageHistory: async (userA: number, userB: number) => {
     const res = await fetch(
-      `http://localhost:3001/messages/history?userA=${userA}&userB=${userB}`
+      `${CHAT_URL}/messages/history?userA=${userA}&userB=${userB}`
     );
     if (!res.ok) throw new Error("Failed to fetch message history");
     return res.json();
