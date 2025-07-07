@@ -1,7 +1,6 @@
 import { useEffect, useRef, useState, useCallback } from "react";
 import { io, Socket } from "socket.io-client";
 
-// Update the MessageData interface
 interface MessageData {
   type: "message";
   from: number;
@@ -47,13 +46,15 @@ export function useGlobalSocket(token: string | null) {
 
     console.log("🔌 Connecting to Socket.IO chat server...");
 
-    // Connect to the Node.js chat server
-    const socketInstance = io("http://localhost:3001", {
-      auth: {
-        token: token,
-      },
-      transports: ["websocket", "polling"],
-    });
+    const socketInstance = io(
+      "https://efficient-wholeness-production.up.railway.app",
+      {
+        auth: {
+          token: token,
+        },
+        transports: ["websocket", "polling"],
+      }
+    );
 
     socketInstance.on("connect", () => {
       console.log("✅ Socket.IO connected to chat server");
