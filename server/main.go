@@ -13,6 +13,7 @@ import (
 	"project/server/database"
 	"project/server/handlers"
 	"project/server/middleware"
+	"project/server/utils"
 
 	"github.com/gorilla/mux"
 	"github.com/joho/godotenv"
@@ -31,6 +32,19 @@ func main() {
 		log.Fatalf("Unable to connect to database: %v", err)
 	}
 	defer pool.Close()
+
+	// Create uploads directory
+	uploadsDir, err := utils.EnsureUploadsDir()
+	if err != nil {
+		log.Printf("Warning: Unable to create uploads directory: %v", err)
+	} else {
+		log.Printf("Using uploads directory: %s", uploadsDir)
+		if utils.IsPersistentStorage() {
+			log.Printf("Using persistent storage - files will survive container restarts")
+		} else {
+			log.Printf("Warning: Using local storage - files may be lost on container restart")
+		}
+	}
 
 	// Create the router
 	router := mux.NewRouter()
@@ -79,7 +93,7 @@ func main() {
 	apiRouter.HandleFunc("/upload", handlers.UploadHandler).Methods("POST", "OPTIONS")
 	apiRouter.HandleFunc("/upload/multiple", handlers.MultipleUploadHandler).Methods("POST", "OPTIONS")
 	// Serve uploaded files
-	router.PathPrefix("/uploads/").Handler(http.StripPrefix("/uploads/", http.FileServer(http.Dir("./uploads"))))
+	router.PathPrefix("/uploads/").Handler(http.StripPrefix("/uploads/", http.FileServer(http.Dir(uploadsDir))))
 
 	// Trading routes
 	tradingRouter := apiRouter.PathPrefix("/trading").Subrouter()

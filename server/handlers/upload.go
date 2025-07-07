@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"project/server/utils"
 	"strings"
 	"time"
 )
@@ -58,7 +59,7 @@ func UploadHandler(w http.ResponseWriter, r *http.Request) {
 	filename := generateUniqueFilename(header.Filename)
 
 	// Ensure uploads directory exists
-	uploadDir := "uploads"
+	uploadDir := utils.GetUploadsDir()
 	if err := os.MkdirAll(uploadDir, os.ModePerm); err != nil {
 		http.Error(w, "Unable to create upload directory", http.StatusInternalServerError)
 		return
@@ -107,7 +108,7 @@ func MultipleUploadHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Ensure uploads directory exists
-	uploadDir := "uploads"
+	uploadDir := utils.GetUploadsDir()
 	if err := os.MkdirAll(uploadDir, os.ModePerm); err != nil {
 		http.Error(w, "Unable to create upload directory", http.StatusInternalServerError)
 		return
@@ -230,7 +231,7 @@ func MessageAttachmentHandler(w http.ResponseWriter, r *http.Request) {
 	filename := generateUniqueFilename(header.Filename)
 
 	// Ensure uploads directory exists
-	uploadDir := "uploads/messages"
+	uploadDir := utils.GetUploadsDir() + "/messages"
 	if err := os.MkdirAll(uploadDir, os.ModePerm); err != nil {
 		http.Error(w, "Unable to create upload directory", http.StatusInternalServerError)
 		return

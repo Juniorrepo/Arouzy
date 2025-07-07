@@ -14,6 +14,7 @@ import (
 
 	"project/server/database"
 	"project/server/models"
+	"project/server/utils"
 )
 
 // UploadTradingContentHandler handles uploading new trading content (private)
@@ -59,7 +60,7 @@ func UploadTradingContentHandler(w http.ResponseWriter, r *http.Request) {
 	filename := fmt.Sprintf("trading_%d_%s", timestamp, header.Filename)
 
 	// Ensure uploads directory exists
-	uploadDir := "uploads"
+	uploadDir := utils.GetUploadsDir()
 	if err := os.MkdirAll(uploadDir, os.ModePerm); err != nil {
 		http.Error(w, "Unable to create upload directory", http.StatusInternalServerError)
 		return
