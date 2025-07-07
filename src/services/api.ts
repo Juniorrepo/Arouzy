@@ -256,23 +256,48 @@ export const collectionService = {
   },
 };
 
-// Message API services
-export const messageService = {
-  getConversations: async () => {
-    return api.get("/api/messages/conversations");
-  },
-  getMessageHistory: async (userId: number) => {
-    return api.get("/api/messages/history", { params: { userId } });
+// Message API services - REMOVED: Chat functionality moved to separate Node.js server
+// export const messageService = {
+//   getConversations: async () => {
+//     return api.get("/api/messages/conversations");
+//   },
+//   getMessageHistory: async (userId: number) => {
+//     return api.get("/api/messages/history", { params: { userId } });
+//   },
+//   uploadAttachment: async (file: File) => {
+//     return api.post("/api/messages/attachment", formData, {
+//       headers: {
+//         "Content-Type": "multipart/form-data",
+//       },
+//     });
+//   },
+// };
+
+// Chat server API (for conversations)
+export const chatService = {
+  getConversations: async (userId: number) => {
+    const res = await fetch(
+      `http://localhost:3001/messages/conversations?userId=${userId}`
+    );
+    if (!res.ok) throw new Error("Failed to fetch conversations");
+    return res.json();
   },
   uploadAttachment: async (file: File) => {
     const formData = new FormData();
     formData.append("attachment", file);
-
-    return api.post("/api/messages/attachment", formData, {
-      headers: {
-        "Content-Type": "multipart/form-data",
-      },
+    const res = await fetch("http://localhost:3001/upload/attachment", {
+      method: "POST",
+      body: formData,
     });
+    if (!res.ok) throw new Error("Failed to upload attachment");
+    return res.json();
+  },
+  getMessageHistory: async (userA: number, userB: number) => {
+    const res = await fetch(
+      `http://localhost:3001/messages/history?userA=${userA}&userB=${userB}`
+    );
+    if (!res.ok) throw new Error("Failed to fetch message history");
+    return res.json();
   },
 };
 

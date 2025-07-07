@@ -120,14 +120,14 @@ func main() {
 	collectionsRouter.HandleFunc("/delete", middleware.AuthMiddleware(handlers.DeleteCollectionHandler)).Methods("DELETE")
 	collectionsRouter.HandleFunc("/detail/{id}", middleware.OptionalAuthMiddleware(handlers.GetCollectionHandler)).Methods("GET")
 
-	// Messages routes
-	messagesRouter := apiRouter.PathPrefix("/messages").Subrouter()
-	messagesRouter.HandleFunc("/conversations", middleware.AuthMiddleware(handlers.ListConversationsHandler)).Methods("GET")
-	messagesRouter.HandleFunc("/history", middleware.AuthMiddleware(handlers.GetMessageHistoryHandler)).Methods("GET")
-	messagesRouter.HandleFunc("/attachment", middleware.AuthMiddleware(handlers.MessageAttachmentHandler)).Methods("POST", "OPTIONS")
+	// Messages routes - REMOVED: Chat functionality moved to separate Node.js server
+	// messagesRouter := apiRouter.PathPrefix("/messages").Subrouter()
+	// messagesRouter.HandleFunc("/conversations", middleware.AuthMiddleware(handlers.ListConversationsHandler)).Methods("GET")
+	// messagesRouter.HandleFunc("/history", middleware.AuthMiddleware(handlers.GetMessageHistoryHandler)).Methods("GET")
+	// messagesRouter.HandleFunc("/attachment", middleware.AuthMiddleware(handlers.MessageAttachmentHandler)).Methods("POST", "OPTIONS")
 
-	// WebSocket endpoint for real-time messaging
-	router.HandleFunc("/ws", handlers.WebSocketHandler)
+	// WebSocket endpoint for real-time messaging - REMOVED: Chat functionality moved to separate Node.js server
+	// router.HandleFunc("/ws", handlers.WebSocketHandler)
 
 	// Set up CORS
 	c := cors.New(cors.Options{

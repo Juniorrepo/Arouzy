@@ -5,9 +5,10 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "vite build",
-    "lint": "eslint .",
+    "build": "tsc && vite build",
+    "lint": "eslint . --ext ts,tsx --report-unused-disable-directives --max-warnings 0",
     "preview": "vite preview",
+    "chat-server": "cd chat-server && npm run dev",
     "server": "cd server && go run ."
   },
   "dependencies": {
@@ -21,6 +22,7 @@
     "react-hot-toast": "^2.5.2",
     "react-masonry-css": "^1.0.16",
     "react-router-dom": "^6.22.3",
+    "socket.io-client": "^4.8.1",
     "sweetalert2": "^11.22.2"
   },
   "devDependencies": {

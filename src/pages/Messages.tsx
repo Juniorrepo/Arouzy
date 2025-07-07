@@ -1,14 +1,11 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import React, { useEffect, useState, useRef } from "react";
 import { useParams } from "react-router-dom";
 import { useAuth } from "../contexts/AuthContext";
 import { useSocket } from "../contexts/SocketContext";
-import { messageService, userService } from "../services/api";
-import { Send, Smile } from "lucide-react";
+import { Loader2, Send, Smile } from "lucide-react";
 import EmojiPicker from "emoji-picker-react";
-import { getThumbnailUrl } from "../utils/imageUtils";
 import toast from "react-hot-toast";
-import MessageSkeletonLoader from "../components/Content/MessageSkeletonLoader";
+import { chatService } from "../services/api";
 
 interface Conversation {
   userId: number;
@@ -17,7 +14,6 @@ interface Conversation {
   unreadCount?: number;
 }
 
-// Update the ChatMessage interface
 interface ChatMessage {
   id?: number;
   from: number;
@@ -31,7 +27,15 @@ interface ChatMessage {
 const Messages: React.FC = () => {
   const { user } = useAuth();
   const { userId } = useParams<{ userId: string }>();
-  const { sendMessage, unreadCounts, on, off, markRead } = useSocket();
+  const {
+    sendMessage,
+    unreadCounts,
+    on,
+    off,
+    markRead,
+    startTyping,
+    stopTyping,
+  } = useSocket();
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const [selected, setSelected] = useState<number | null>(
     userId ? Number(userId) : null
@@ -39,17 +43,16 @@ const Messages: React.FC = () => {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [input, setInput] = useState("");
   const [showEmojiPicker, setShowEmojiPicker] = useState<boolean>(false);
+  const [isTyping, setIsTyping] = useState<{ [userId: number]: boolean }>({});
   const chatContainerRef = useRef<HTMLDivElement>(null);
-
-  // Add a new state for the attachment
+  const typingTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [attachment, setAttachment] = useState<File | null>(null);
   const [attachmentPreview, setAttachmentPreview] = useState<string | null>(
     null
   );
-  const [isLoadingMessages, setIsLoadingMessages] = useState(false);
   const [isUploadingAttachment, setIsUploadingAttachment] = useState(false);
+  const [isLoadingConversations, setIsLoadingConversations] = useState(false);
 
-  // Define handleEmojiClick and handleKeyDown before they're used
   const handleEmojiClick = (emojiObject: any) => {
     setInput((prev) => prev + emojiObject.emoji);
   };
@@ -61,7 +64,22 @@ const Messages: React.FC = () => {
     }
   };
 
-  // Add a function to handle attachment selection
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setInput(e.target.value);
+
+    if (selected) {
+      startTyping(selected);
+
+      if (typingTimeoutRef.current) {
+        clearTimeout(typingTimeoutRef.current);
+      }
+
+      typingTimeoutRef.current = setTimeout(() => {
+        stopTyping(selected);
+      }, 1000);
+    }
+  };
+
   const handleAttachmentSelect = (
     event: React.ChangeEvent<HTMLInputElement>
   ) => {
@@ -69,7 +87,6 @@ const Messages: React.FC = () => {
       const file = event.target.files[0];
       setAttachment(file);
 
-      // Create a preview for the attachment
       const reader = new FileReader();
       reader.onload = (e) => {
         setAttachmentPreview(e.target?.result as string);
@@ -78,89 +95,40 @@ const Messages: React.FC = () => {
     }
   };
 
-  // Add a function to clear the attachment
   const clearAttachment = () => {
     setAttachment(null);
     setAttachmentPreview(null);
   };
 
-  // Fetch conversations on mount
+  const uploadAttachment = async (file: File): Promise<string> => {
+    const data = await chatService.uploadAttachment(file);
+    return data.url;
+  };
+
   useEffect(() => {
-    const fetchConversations = async () => {
-      try {
-        const res = await messageService.getConversations();
-        let conversationList = res.data || [];
-
-        // If userId is provided in URL and not in conversations, add it
-        if (userId) {
-          const targetUserId = Number(userId);
-          const existingConv = conversationList.find(
-            (conv: Conversation) => conv.userId === targetUserId
-          );
-
-          if (!existingConv) {
-            // Try to get the username for this user
-            try {
-              const userRes = await userService.getUserById(targetUserId);
-              const newConversation = {
-                userId: targetUserId,
-                username: userRes.data.username,
-                lastMessage: "",
-                unreadCount: 0,
-              };
-              conversationList = [newConversation, ...conversationList];
-            } catch (error) {
-              console.error("Error fetching user info:", error);
-              // Fallback to placeholder username
-              const newConversation = {
-                userId: targetUserId,
-                username: `user${targetUserId}`,
-                lastMessage: "",
-                unreadCount: 0,
-              };
-              conversationList = [newConversation, ...conversationList];
-            }
-          }
-        }
-
-        setConversations(conversationList);
-        console.log("📋 Loaded conversations:", conversationList);
-      } catch (error) {
-        console.error("Error fetching conversations:", error);
-        setConversations([]); // Set empty array on error
-      }
-    };
-
-    fetchConversations();
-  }, [userId]);
-
-  // Fetch message history when selected changes
-  useEffect(() => {
-    if (selected) {
-      setIsLoadingMessages(true);
-      messageService
-        .getMessageHistory(selected)
-        .then((res) => {
-          setMessages(res.data || []);
-          markRead(selected);
-          console.log(
-            `📜 Loaded message history with user ${selected}:`,
-            res.data
-          );
+    if (user) {
+      setIsLoadingConversations(true);
+      chatService
+        .getConversations(Number(user.id))
+        .then((data) => {
+          const mapped = data.map((conv: any) => ({
+            userId: conv.userId ?? conv.userid ?? conv.user_id,
+            username:
+              conv.username ??
+              `User ${conv.userId ?? conv.userid ?? conv.user_id}`,
+            lastMessage: conv.lastMessage,
+            lastMessageTime: conv.lastMessageTime,
+            unreadCount: conv.unreadCount ?? 0,
+          }));
+          setConversations(mapped);
         })
-        .catch((error) => {
-          console.error("Error fetching message history:", error);
-          setMessages([]); // Set empty array on error
-        })
-        .finally(() => {
-          setIsLoadingMessages(false);
-        });
+        .catch(() => setConversations([]))
+        .finally(() => setIsLoadingConversations(false));
     }
-  }, [selected, markRead]);
+  }, [user]);
 
-  // Listen for incoming messages
   useEffect(() => {
-    const handler = (data: any) => {
+    const messageHandler = (data: any) => {
       if (data.type === "message") {
         const msg = data as ChatMessage;
         if (
@@ -172,23 +140,36 @@ const Messages: React.FC = () => {
             Number(msg.to) === Number(user.id))
         ) {
           console.log(`📨 Received message in chat:`, msg);
-          // Only add message if it's from another user (not from current user)
           if (Number(msg.from) !== Number(user.id)) {
             setMessages((prev) => [...prev, msg]);
-            // Mark as read immediately when message is received
             markRead(selected);
           }
         }
       }
     };
 
-    on("message", handler);
-
-    // Proper cleanup using the off function
-    return () => {
-      off("message", handler); // Fixed: Use off instead of on
+    const typingStartHandler = (data: any) => {
+      if (data.from === selected) {
+        setIsTyping((prev) => ({ ...prev, [data.from]: true }));
+      }
     };
-  }, [selected, on, off, user, markRead]); // Add off to dependencies
+
+    const typingStopHandler = (data: any) => {
+      if (data.from === selected) {
+        setIsTyping((prev) => ({ ...prev, [data.from]: false }));
+      }
+    };
+
+    on("message", messageHandler);
+    on("typing_start", typingStartHandler);
+    on("typing_stop", typingStopHandler);
+
+    return () => {
+      off("message", messageHandler);
+      off("typing_start", typingStartHandler);
+      off("typing_stop", typingStopHandler);
+    };
+  }, [selected, on, off, user, markRead]);
 
   useEffect(() => {
     setConversations((prev) =>
@@ -199,17 +180,23 @@ const Messages: React.FC = () => {
     );
   }, [unreadCounts]);
 
-  // Update the handleSend function
+  useEffect(() => {
+    if (selected && user) {
+      chatService
+        .getMessageHistory(Number(user.id), Number(selected))
+        .then((data) => setMessages(data))
+        .catch(() => setMessages([]));
+    }
+  }, [selected, user]);
+
   const handleSend = async () => {
     if (selected !== null && (input.trim() || attachment) && user) {
       let attachmentUrl = "";
 
-      // Upload attachment if exists
       if (attachment) {
         setIsUploadingAttachment(true);
         try {
-          const response = await messageService.uploadAttachment(attachment);
-          attachmentUrl = response.data.url;
+          attachmentUrl = await uploadAttachment(attachment);
           console.log("📎 Uploaded attachment:", attachmentUrl);
         } catch (error) {
           console.error("Error uploading attachment:", error);
@@ -227,7 +214,6 @@ const Messages: React.FC = () => {
         } to ${selected}: "${input.trim()}" with attachment: ${attachmentUrl}`
       );
 
-      // Only proceed if we have a message or a successful attachment upload
       if (input.trim() || attachmentUrl) {
         sendMessage(selected, input.trim(), attachmentUrl);
 
@@ -244,16 +230,31 @@ const Messages: React.FC = () => {
         setInput("");
         clearAttachment();
         setShowEmojiPicker(false);
+
+        if (typingTimeoutRef.current) {
+          clearTimeout(typingTimeoutRef.current);
+        }
+        stopTyping(selected);
       }
     }
   };
+
+  useEffect(() => {
+    if (conversations.length > 0 && !selected) {
+      setSelected(conversations[0].userId);
+    }
+  }, [conversations, selected]);
 
   return (
     <div className="flex h-[80vh] max-w-4xl mx-auto mt-8 bg-dark-800 rounded-lg overflow-hidden shadow-lg">
       {/* Conversation List */}
       <div className="w-1/3 bg-dark-900 border-r border-dark-700 p-4">
         <h2 className="text-lg font-bold text-white mb-4">Messages</h2>
-        {conversations && conversations.length > 0 ? (
+        {isLoadingConversations ? (
+          <div className="text-gray-400 text-center py-8">
+            <Loader2 className="animate-spin" size={24} />
+          </div>
+        ) : conversations && conversations.length > 0 ? (
           <ul>
             {conversations.map((conv: Conversation) => (
               <li
@@ -268,7 +269,6 @@ const Messages: React.FC = () => {
                     `👤 Selected user: ${conv?.username} (ID: ${conv?.userId})`
                   );
                   setSelected(Number(conv?.userId));
-                  // Mark as read when conversation is selected
                   if (conv.unreadCount && conv.unreadCount > 0) {
                     markRead(conv.userId);
                   }
@@ -298,9 +298,7 @@ const Messages: React.FC = () => {
         >
           {selected ? (
             <div>
-              {isLoadingMessages ? (
-                <MessageSkeletonLoader count={5} />
-              ) : messages && messages.length > 0 ? (
+              {messages && messages.length > 0 ? (
                 messages.map((msg, idx) => (
                   <div
                     key={idx}
@@ -320,12 +318,16 @@ const Messages: React.FC = () => {
                       {msg.attachmentUrl && (
                         <div className="mb-2">
                           <a
-                            href={getThumbnailUrl(msg.attachmentUrl)}
+                            href={`${import.meta.env.VITE_API_URL}${
+                              msg.attachmentUrl
+                            }`}
                             target="_blank"
                             rel="noopener noreferrer"
                           >
                             <img
-                              src={getThumbnailUrl(msg.attachmentUrl)}
+                              src={`${import.meta.env.VITE_API_URL}${
+                                msg.attachmentUrl
+                              }`}
                               alt="Attachment"
                               className="max-w-full rounded-lg cursor-pointer"
                               onError={(e) => {
@@ -346,6 +348,25 @@ const Messages: React.FC = () => {
               ) : (
                 <div className="text-gray-400 text-center py-8">
                   No messages yet. Start the conversation!
+                </div>
+              )}
+
+              {/* Typing indicator */}
+              {isTyping[selected] && (
+                <div className="flex justify-start mb-2">
+                  <div className="px-4 py-2 rounded-lg bg-dark-700 text-white">
+                    <div className="flex space-x-1">
+                      <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce"></div>
+                      <div
+                        className="w-2 h-2 bg-gray-400 rounded-full animate-bounce"
+                        style={{ animationDelay: "0.1s" }}
+                      ></div>
+                      <div
+                        className="w-2 h-2 bg-gray-400 rounded-full animate-bounce"
+                        style={{ animationDelay: "0.2s" }}
+                      ></div>
+                    </div>
+                  </div>
                 </div>
               )}
             </div>
@@ -392,7 +413,7 @@ const Messages: React.FC = () => {
               <input
                 className="flex-1 bg-dark-700 text-white px-4 py-2 rounded-l-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
                 value={input}
-                onChange={(e) => setInput(e.target.value)}
+                onChange={handleInputChange}
                 onKeyDown={handleKeyDown}
                 placeholder="Type your message..."
               />

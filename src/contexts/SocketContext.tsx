@@ -1,13 +1,16 @@
 import React, { createContext, useContext } from "react";
+import { Socket } from "socket.io-client";
 import { useGlobalSocket } from "../hooks/useGlobalSocket";
 
 interface SocketContextType {
-  socket: WebSocket | null;
+  socket: Socket | null;
   sendMessage: (to: number, message: string, attachmentUrl?: string) => void;
   unreadCounts: { [userId: string]: number };
   on: (event: string, fn: (data: unknown) => void) => void;
   off: (event: string, fn: (data: unknown) => void) => void;
   markRead: (from: number) => void;
+  startTyping: (to: number) => void;
+  stopTyping: (to: number) => void;
 }
 
 const SocketContext = createContext<SocketContextType | null>(null);
