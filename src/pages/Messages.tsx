@@ -8,6 +8,7 @@ import { Send, Smile } from "lucide-react";
 import EmojiPicker from "emoji-picker-react";
 import { getThumbnailUrl } from "../utils/imageUtils";
 import toast from "react-hot-toast";
+import MessageSkeletonLoader from "../components/Content/MessageSkeletonLoader";
 
 interface Conversation {
   userId: number;
@@ -45,6 +46,8 @@ const Messages: React.FC = () => {
   const [attachmentPreview, setAttachmentPreview] = useState<string | null>(
     null
   );
+  const [isLoadingMessages, setIsLoadingMessages] = useState(false);
+  const [isUploadingAttachment, setIsUploadingAttachment] = useState(false);
 
   // Define handleEmojiClick and handleKeyDown before they're used
   const handleEmojiClick = (emojiObject: any) => {
@@ -134,6 +137,7 @@ const Messages: React.FC = () => {
   // Fetch message history when selected changes
   useEffect(() => {
     if (selected) {
+      setIsLoadingMessages(true);
       messageService
         .getMessageHistory(selected)
         .then((res) => {
@@ -147,6 +151,9 @@ const Messages: React.FC = () => {
         .catch((error) => {
           console.error("Error fetching message history:", error);
           setMessages([]); // Set empty array on error
+        })
+        .finally(() => {
+          setIsLoadingMessages(false);
         });
     }
   }, [selected, markRead]);
@@ -199,13 +206,18 @@ const Messages: React.FC = () => {
 
       // Upload attachment if exists
       if (attachment) {
+        setIsUploadingAttachment(true);
         try {
           const response = await messageService.uploadAttachment(attachment);
           attachmentUrl = response.data.url;
           console.log("📎 Uploaded attachment:", attachmentUrl);
         } catch (error) {
           console.error("Error uploading attachment:", error);
-          return toast.error("Failed to upload attachment");
+          toast.error("Failed to upload attachment");
+          setIsUploadingAttachment(false);
+          return;
+        } finally {
+          setIsUploadingAttachment(false);
         }
       }
 
@@ -286,7 +298,9 @@ const Messages: React.FC = () => {
         >
           {selected ? (
             <div>
-              {messages && messages.length > 0 ? (
+              {isLoadingMessages ? (
+                <MessageSkeletonLoader count={5} />
+              ) : messages && messages.length > 0 ? (
                 messages.map((msg, idx) => (
                   <div
                     key={idx}
@@ -426,12 +440,18 @@ const Messages: React.FC = () => {
               </div>
 
               <button
-                className="bg-primary-500 hover:bg-primary-600 text-white px-4 py-2 rounded-r-lg flex items-center gap-2 transition-colors cursor-pointer"
+                className="bg-primary-500 hover:bg-primary-600 text-white px-4 py-2 rounded-r-lg flex items-center gap-2 transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
                 onClick={handleSend}
-                disabled={!input.trim() && !attachment}
+                disabled={
+                  (!input.trim() && !attachment) || isUploadingAttachment
+                }
               >
-                <Send size={18} />
-                <span>Send</span>
+                {isUploadingAttachment ? (
+                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                ) : (
+                  <Send size={18} />
+                )}
+                <span>{isUploadingAttachment ? "Uploading..." : "Send"}</span>
               </button>
             </div>
           </div>
