@@ -50,11 +50,18 @@ export function useGlobalSocket(token: string | null) {
 
     console.log("🔌 Connecting to Socket.IO chat server...");
     console.log("🔌 Token available:", !!token);
+    console.log("🔌 Environment:", import.meta.env.MODE);
 
+    // Use environment variable for chat server URL, fallback to Railway URL
     const CHAT_SERVER_URL =
+      import.meta.env.VITE_CHAT_SERVER_URL ||
       "https://efficient-wholeness-production.up.railway.app";
 
     console.log("🔌 Chat server URL:", CHAT_SERVER_URL);
+    console.log(
+      "🔌 VITE_CHAT_SERVER_URL env var:",
+      import.meta.env.VITE_CHAT_SERVER_URL
+    );
 
     const socketInstance = io(CHAT_SERVER_URL, {
       auth: {
@@ -88,6 +95,24 @@ export function useGlobalSocket(token: string | null) {
         name: error.name,
         stack: error.stack,
       });
+      console.error("🚨 Connection URL:", CHAT_SERVER_URL);
+      console.error("🚨 Token length:", token?.length || 0);
+    });
+
+    socketInstance.on("reconnect_attempt", (attemptNumber) => {
+      console.log(`🔄 Reconnection attempt ${attemptNumber}`);
+    });
+
+    socketInstance.on("reconnect", (attemptNumber) => {
+      console.log(`✅ Reconnected after ${attemptNumber} attempts`);
+    });
+
+    socketInstance.on("reconnect_error", (error) => {
+      console.error("🚨 Reconnection error:", error);
+    });
+
+    socketInstance.on("reconnect_failed", () => {
+      console.error("🚨 Reconnection failed after all attempts");
     });
 
     socketInstance.on("message", (data: MessageData) => {

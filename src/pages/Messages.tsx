@@ -54,6 +54,22 @@ const Messages: React.FC = () => {
   const [isUploadingAttachment, setIsUploadingAttachment] = useState(false);
   const [isLoadingConversations, setIsLoadingConversations] = useState(false);
 
+  // Test chat server connection
+  const testChatServerConnection = async () => {
+    try {
+      const chatUrl =
+        import.meta.env.VITE_CHAT_SERVER_URL ||
+        "https://efficient-wholeness-production.up.railway.app";
+      const response = await fetch(`${chatUrl}/test`);
+      const data = await response.json();
+      console.log("✅ Chat server test response:", data);
+      return true;
+    } catch (error) {
+      console.error("❌ Chat server test failed:", error);
+      return false;
+    }
+  };
+
   const handleEmojiClick = (emojiObject: any) => {
     setInput((prev) => prev + emojiObject.emoji);
   };
@@ -108,6 +124,11 @@ const Messages: React.FC = () => {
 
   useEffect(() => {
     if (user) {
+      // Test chat server connection first
+      testChatServerConnection().then((isConnected) => {
+        console.log("🔌 Chat server connection test result:", isConnected);
+      });
+
       setIsLoadingConversations(true);
       chatService
         .getConversations(Number(user.id))

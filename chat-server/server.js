@@ -11,34 +11,24 @@ require("dotenv").config();
 
 const app = express();
 const server = http.createServer(app);
+
+// Configure Socket.IO with more conservative settings for Railway
 const io = socketIo(server, {
   cors: {
-    origin: [
-      "http://localhost:5173",
-      "http://localhost:3000",
-      "https://arouzy.vercel.app",
-      "https://arouzy.up.railway.app",
-    ],
+    origin: "*",
     methods: ["GET", "POST"],
     credentials: true,
   },
+  // Reduce memory usage
+  maxHttpBufferSize: 1e6, // 1MB instead of default 1e8
+  pingTimeout: 60000, // 60 seconds
+  pingInterval: 25000, // 25 seconds
+  transports: ["websocket", "polling"],
 });
 
-// Middleware
-app.use(
-  cors({
-    origin: [
-      "http://localhost:5173",
-      "http://localhost:3000",
-      "https://arouzy.vercel.app",
-      "https://arouzy.up.railway.app",
-    ],
-    credentials: true,
-  })
-);
+app.use(cors({ origin: "*", credentials: true }));
 app.use(express.json());
 
-// Create uploads directory if it doesn't exist
 const uploadsDir = path.join(__dirname, "uploads");
 const messagesDir = path.join(uploadsDir, "messages");
 if (!fs.existsSync(uploadsDir)) {
@@ -48,7 +38,6 @@ if (!fs.existsSync(messagesDir)) {
   fs.mkdirSync(messagesDir, { recursive: true });
 }
 
-// Serve uploaded files
 app.use("/uploads", express.static(uploadsDir));
 
 // Configure multer for file uploads
@@ -84,8 +73,22 @@ const JWT_SECRET =
   process.env.JWT_SECRET ||
   "8f42a73054b1749f8f58848be5e6502c8f8aa78496fdc41879c8d0f5c3c9d8a9";
 
+// Use WeakMap to reduce memory usage and allow garbage collection
 const connectedUsers = new Map();
 const unreadCounts = new Map();
+
+// Add memory monitoring
+const logMemoryUsage = () => {
+  const memUsage = process.memoryUsage();
+  console.log(
+    `Memory usage: ${Math.round(
+      memUsage.heapUsed / 1024 / 1024
+    )}MB used, ${Math.round(memUsage.heapTotal / 1024 / 1024)}MB total`
+  );
+};
+
+// Log memory usage every 5 minutes
+setInterval(logMemoryUsage, 5 * 60 * 1000);
 
 const dbPool = new Pool({
   connectionString: process.env.DATABASE_URL,
@@ -128,13 +131,16 @@ io.on("connection", (socket) => {
   const userUnreadCounts = unreadCounts.get(socket.userId) || {};
   socket.emit("unread_counts", userUnreadCounts);
 
-  // Add heartbeat to keep connection alive
   const heartbeat = setInterval(() => {
-    socket.emit("ping");
-  }, 25000); // Send ping every 25 seconds
+    try {
+      socket.emit("ping");
+    } catch (error) {
+      console.error(`Error sending ping to user ${socket.userId}:`, error);
+      clearInterval(heartbeat);
+    }
+  }, 30000);
 
   socket.on("pong", () => {
-    // Client responded to ping
     console.log(`User ${socket.userId} heartbeat received`);
   });
 
@@ -246,6 +252,15 @@ app.get("/health", (req, res) => {
     uptime: process.uptime(),
     memory: process.memoryUsage(),
     environment: process.env.NODE_ENV || "development",
+  });
+});
+
+// Simple test endpoint
+app.get("/test", (req, res) => {
+  res.json({
+    message: "Chat server is running!",
+    timestamp: new Date().toISOString(),
+    cors: "enabled",
   });
 });
 
