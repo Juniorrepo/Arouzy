@@ -78,14 +78,13 @@ const upload = multer({
   },
 });
 
-// JWT Secret (should be the same as your Go server)
-const JWT_SECRET = process.env.JWT_SECRET || "your-secret-key";
+const JWT_SECRET =
+  process.env.JWT_SECRET ||
+  "8f42a73054b1749f8f58848be5e6502c8f8aa78496fdc41879c8d0f5c3c9d8a9";
 
-// In-memory storage for demo (use database in production)
-const connectedUsers = new Map(); // userId -> socket
-const unreadCounts = new Map(); // userId -> { fromUserId: count }
+const connectedUsers = new Map();
+const unreadCounts = new Map();
 
-// PostgreSQL connection
 const dbPool = new Pool({
   connectionString: process.env.DATABASE_URL,
   ssl:
@@ -94,7 +93,6 @@ const dbPool = new Pool({
       : false,
 });
 
-// JWT verification middleware
 const verifyToken = (token) => {
   try {
     return jwt.verify(token, JWT_SECRET);
@@ -103,7 +101,6 @@ const verifyToken = (token) => {
   }
 };
 
-// Socket.IO connection handling
 io.use((socket, next) => {
   const token = socket.handshake.auth.token || socket.handshake.query.token;
 
@@ -124,14 +121,11 @@ io.use((socket, next) => {
 io.on("connection", (socket) => {
   console.log(`User ${socket.userId} (${socket.username}) connected`);
 
-  // Store connected user
   connectedUsers.set(socket.userId, socket);
 
-  // Send initial unread counts
   const userUnreadCounts = unreadCounts.get(socket.userId) || {};
   socket.emit("unread_counts", userUnreadCounts);
 
-  // Handle private messages
   socket.on("message", async (data) => {
     const { to, message, attachmentUrl } = data;
     if (!to || (!message && !attachmentUrl)) {
@@ -146,7 +140,6 @@ io.on("connection", (socket) => {
       attachmentUrl: attachmentUrl || null,
       timestamp: now.toISOString(),
     };
-    // Save to DB
     try {
       await dbPool.query(
         `INSERT INTO messages (from_user_id, to_user_id, message, attachment_url, created_at) VALUES ($1, $2, $3, $4, $5)`,
@@ -155,13 +148,11 @@ io.on("connection", (socket) => {
     } catch (err) {
       console.error("Failed to save message to DB:", err);
     }
-    // Send to recipient if online
     const recipientSocket = connectedUsers.get(to);
     if (recipientSocket) {
       recipientSocket.emit("message", messageData);
       console.log(`Message delivered to online user ${to}`);
     } else {
-      // Add to unread count for offline user
       if (!unreadCounts.has(to)) {
         unreadCounts.set(to, {});
       }
@@ -170,22 +161,18 @@ io.on("connection", (socket) => {
       console.log(`User ${to} is offline, message queued`);
     }
 
-    // Send confirmation back to sender
     socket.emit("message_sent", messageData);
   });
 
-  // Handle marking messages as read
   socket.on("mark_read", (data) => {
     const { from } = data;
 
     if (!from) return;
 
-    // Clear unread count
     if (unreadCounts.has(socket.userId)) {
       const userCounts = unreadCounts.get(socket.userId);
       userCounts[from] = 0;
 
-      // Notify the sender that their message was read
       const senderSocket = connectedUsers.get(from);
       if (senderSocket) {
         senderSocket.emit("message_read", {
@@ -198,7 +185,6 @@ io.on("connection", (socket) => {
     console.log(`User ${socket.userId} marked messages from ${from} as read`);
   });
 
-  // Handle typing indicators
   socket.on("typing_start", (data) => {
     const { to } = data;
     const recipientSocket = connectedUsers.get(to);
@@ -215,14 +201,12 @@ io.on("connection", (socket) => {
     }
   });
 
-  // Handle disconnection
   socket.on("disconnect", () => {
     console.log(`User ${socket.userId} disconnected`);
     connectedUsers.delete(socket.userId);
   });
 });
 
-// File upload endpoint for message attachments
 app.post("/upload/attachment", upload.single("attachment"), (req, res) => {
   try {
     if (!req.file) {
@@ -241,7 +225,6 @@ app.post("/upload/attachment", upload.single("attachment"), (req, res) => {
   }
 });
 
-// Health check endpoint
 app.get("/health", (req, res) => {
   res.json({
     status: "ok",
@@ -250,7 +233,6 @@ app.get("/health", (req, res) => {
   });
 });
 
-// Get connected users (for debugging)
 app.get("/users/connected", (req, res) => {
   const users = Array.from(connectedUsers.keys()).map((userId) => ({
     userId,
@@ -259,14 +241,12 @@ app.get("/users/connected", (req, res) => {
   res.json(users);
 });
 
-// Get unread counts for a user
 app.get("/users/:userId/unread", (req, res) => {
   const userId = parseInt(req.params.userId);
   const userCounts = unreadCounts.get(userId) || {};
   res.json(userCounts);
 });
 
-// REST endpoint to fetch message history between two users
 app.get("/messages/history", async (req, res) => {
   const { userA, userB } = req.query;
   if (!userA || !userB)
@@ -286,7 +266,6 @@ app.get("/messages/history", async (req, res) => {
   }
 });
 
-// Get all users this user has chatted with
 app.get("/messages/conversations", async (req, res) => {
   const { userId } = req.query;
   if (!userId) return res.status(400).json({ error: "Missing userId" });
@@ -325,6 +304,6 @@ app.get("/messages/conversations", async (req, res) => {
 const PORT = process.env.CHAT_PORT || 3001;
 
 server.listen(PORT, () => {
-  console.log(`Chat server running on port ${PORT}`);
+  console.log(`Chat server running on port ${PORT} 🚀`);
   console.log(`Uploads directory: ${uploadsDir}`);
 });
