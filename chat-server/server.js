@@ -128,6 +128,16 @@ io.on("connection", (socket) => {
   const userUnreadCounts = unreadCounts.get(socket.userId) || {};
   socket.emit("unread_counts", userUnreadCounts);
 
+  // Add heartbeat to keep connection alive
+  const heartbeat = setInterval(() => {
+    socket.emit("ping");
+  }, 25000); // Send ping every 25 seconds
+
+  socket.on("pong", () => {
+    // Client responded to ping
+    console.log(`User ${socket.userId} heartbeat received`);
+  });
+
   socket.on("message", async (data) => {
     const { to, message, attachmentUrl } = data;
     if (!to || (!message && !attachmentUrl)) {
@@ -203,9 +213,10 @@ io.on("connection", (socket) => {
     }
   });
 
-  socket.on("disconnect", () => {
-    console.log(`User ${socket.userId} disconnected`);
+  socket.on("disconnect", (reason) => {
+    console.log(`User ${socket.userId} disconnected: ${reason}`);
     connectedUsers.delete(socket.userId);
+    clearInterval(heartbeat);
   });
 });
 
@@ -232,6 +243,9 @@ app.get("/health", (req, res) => {
     status: "ok",
     connectedUsers: connectedUsers.size,
     timestamp: new Date().toISOString(),
+    uptime: process.uptime(),
+    memory: process.memoryUsage(),
+    environment: process.env.NODE_ENV || "development",
   });
 });
 
@@ -305,7 +319,36 @@ app.get("/messages/conversations", async (req, res) => {
 
 const PORT = process.env.CHAT_PORT || 3001;
 
-server.listen(PORT, () => {
+// Add graceful shutdown handling
+process.on("SIGTERM", () => {
+  console.log("🛑 Received SIGTERM, shutting down gracefully...");
+  server.close(() => {
+    console.log("✅ Server closed");
+    process.exit(0);
+  });
+});
+
+process.on("SIGINT", () => {
+  console.log("🛑 Received SIGINT, shutting down gracefully...");
+  server.close(() => {
+    console.log("✅ Server closed");
+    process.exit(0);
+  });
+});
+
+// Add process error handling
+process.on("uncaughtException", (error) => {
+  console.error("💥 Uncaught Exception:", error);
+  process.exit(1);
+});
+
+process.on("unhandledRejection", (reason, promise) => {
+  console.error("💥 Unhandled Rejection at:", promise, "reason:", reason);
+  process.exit(1);
+});
+
+server.listen(PORT, "0.0.0.0", () => {
   console.log(`Chat server running on port ${PORT} 🚀`);
   console.log(`Uploads directory: ${uploadsDir}`);
+  console.log(`Environment: ${process.env.NODE_ENV || "development"}`);
 });

@@ -63,6 +63,10 @@ export function useGlobalSocket(token: string | null) {
       transports: ["websocket", "polling"],
       timeout: 20000, // 20 second timeout
       forceNew: true,
+      reconnection: true,
+      reconnectionAttempts: 5,
+      reconnectionDelay: 1000,
+      reconnectionDelayMax: 5000,
     });
 
     socketInstance.on("connect", () => {
@@ -118,6 +122,12 @@ export function useGlobalSocket(token: string | null) {
     socketInstance.on("typing_stop", (data: TypingData) => {
       console.log("⌨️ User stopped typing:", data);
       listeners.current["typing_stop"]?.forEach((fn) => fn(data));
+    });
+
+    // Handle heartbeat from server
+    socketInstance.on("ping", () => {
+      console.log("💓 Received ping from server, sending pong");
+      socketInstance.emit("pong");
     });
 
     return () => {
