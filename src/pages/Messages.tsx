@@ -35,6 +35,7 @@ const Messages: React.FC = () => {
     markRead,
     startTyping,
     stopTyping,
+    isConnected,
   } = useSocket();
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const [selected, setSelected] = useState<number | null>(
@@ -249,7 +250,21 @@ const Messages: React.FC = () => {
     <div className="flex h-[80vh] max-w-4xl mx-auto mt-8 bg-dark-800 rounded-lg overflow-hidden shadow-lg">
       {/* Conversation List */}
       <div className="w-1/3 bg-dark-900 border-r border-dark-700 p-4">
-        <h2 className="text-lg font-bold text-white mb-4">Messages</h2>
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="text-lg font-bold text-white">Messages</h2>
+          <div
+            className={`flex items-center gap-2 text-sm ${
+              isConnected ? "text-green-400" : "text-red-400"
+            }`}
+          >
+            <div
+              className={`w-2 h-2 rounded-full ${
+                isConnected ? "bg-green-400" : "bg-red-400"
+              }`}
+            ></div>
+            {isConnected ? "Connected" : "Disconnected"}
+          </div>
+        </div>
         {isLoadingConversations ? (
           <div className="text-gray-400 text-center py-8">
             <Loader2 className="animate-spin" size={24} />
@@ -318,16 +333,18 @@ const Messages: React.FC = () => {
                       {msg.attachmentUrl && (
                         <div className="mb-2">
                           <a
-                            href={`${import.meta.env.VITE_API_URL}${
-                              msg.attachmentUrl
-                            }`}
+                            href={`${
+                              import.meta.env.VITE_CHAT_SERVER_URL ||
+                              "https://efficient-wholeness-production.up.railway.app"
+                            }${msg.attachmentUrl}`}
                             target="_blank"
                             rel="noopener noreferrer"
                           >
                             <img
-                              src={`${import.meta.env.VITE_API_URL}${
-                                msg.attachmentUrl
-                              }`}
+                              src={`${
+                                import.meta.env.VITE_CHAT_SERVER_URL ||
+                                "https://efficient-wholeness-production.up.railway.app"
+                              }${msg.attachmentUrl}`}
                               alt="Attachment"
                               className="max-w-full rounded-lg cursor-pointer"
                               onError={(e) => {

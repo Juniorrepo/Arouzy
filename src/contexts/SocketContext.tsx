@@ -4,6 +4,7 @@ import { useGlobalSocket } from "../hooks/useGlobalSocket";
 
 interface SocketContextType {
   socket: Socket | null;
+  isConnected: boolean;
   sendMessage: (to: number, message: string, attachmentUrl?: string) => void;
   unreadCounts: { [userId: string]: number };
   on: (event: string, fn: (data: unknown) => void) => void;

@@ -36,38 +36,54 @@ type EventListener = (data: any) => void;
 
 export function useGlobalSocket(token: string | null) {
   const [socket, setSocket] = useState<Socket | null>(null);
+  const [isConnected, setIsConnected] = useState<boolean>(false);
   const [unreadCounts, setUnreadCounts] = useState<{
     [userId: string]: number;
   }>({});
   const listeners = useRef<{ [event: string]: EventListener[] }>({});
 
   useEffect(() => {
-    if (!token) return;
+    if (!token) {
+      console.log("🔌 No token available, skipping socket connection");
+      return;
+    }
 
     console.log("🔌 Connecting to Socket.IO chat server...");
+    console.log("🔌 Token available:", !!token);
 
-    const socketInstance = io(
-      "https://efficient-wholeness-production.up.railway.app",
-      {
-        auth: {
-          token: token,
-        },
-        transports: ["websocket", "polling"],
-      }
-    );
+    const CHAT_SERVER_URL =
+      "https://efficient-wholeness-production.up.railway.app";
+
+    console.log("🔌 Chat server URL:", CHAT_SERVER_URL);
+
+    const socketInstance = io(CHAT_SERVER_URL, {
+      auth: {
+        token: token,
+      },
+      transports: ["websocket", "polling"],
+      timeout: 20000, // 20 second timeout
+      forceNew: true,
+    });
 
     socketInstance.on("connect", () => {
       console.log("✅ Socket.IO connected to chat server");
       setSocket(socketInstance);
+      setIsConnected(true);
     });
 
     socketInstance.on("disconnect", (reason) => {
       console.log("❌ Socket.IO disconnected from chat server:", reason);
       setSocket(null);
+      setIsConnected(false);
     });
 
     socketInstance.on("connect_error", (error) => {
       console.error("🚨 Socket.IO connection error:", error);
+      console.error("🚨 Error details:", {
+        message: error.message,
+        name: error.name,
+        stack: error.stack,
+      });
     });
 
     socketInstance.on("message", (data: MessageData) => {
@@ -170,6 +186,7 @@ export function useGlobalSocket(token: string | null) {
 
   return {
     socket,
+    isConnected,
     sendMessage,
     unreadCounts,
     on,

@@ -17,6 +17,7 @@ const io = socketIo(server, {
       "http://localhost:5173",
       "http://localhost:3000",
       "https://arouzy.vercel.app",
+      "https://arouzy.up.railway.app",
     ],
     methods: ["GET", "POST"],
     credentials: true,
@@ -30,6 +31,7 @@ app.use(
       "http://localhost:5173",
       "http://localhost:3000",
       "https://arouzy.vercel.app",
+      "https://arouzy.up.railway.app",
     ],
     credentials: true,
   })
