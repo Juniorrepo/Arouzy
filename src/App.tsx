@@ -23,6 +23,7 @@ import TradeRequests from "./pages/TradeRequests";
 import Collections from "./pages/Collections";
 import CollectionDetail from "./pages/CollectionDetail";
 import Messages from "./pages/Messages";
+import Settings from "./pages/Settings";
 
 function App() {
   const { isAuthenticated } = useAuth();
@@ -75,6 +76,18 @@ function App() {
                   <Upload />
                 ) : (
                   <Navigate to="/login" state={{ from: location }} replace />
+                )
+              }
+            />
+
+            {/*Setting Page */}
+            <Route
+              path="/settings"
+              element={
+                isAuthenticated ? (
+                  <Settings />
+                ) : (
+                  <Navigate to="/settings" state={{ from: location }} replace />
                 )
               }
             />

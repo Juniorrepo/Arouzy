@@ -167,6 +167,13 @@ const Navbar: React.FC = () => {
                     >
                       Upload
                     </Link>
+                    <Link
+                      to={`/settings`}
+                      className="block px-4 py-2 text-sm text-white hover:bg-dark-700"
+                      onClick={() => setIsProfileMenuOpen(false)}
+                    >
+                      Settings
+                    </Link>
                     <button
                       onClick={handleLogout}
                       className="block w-full text-left px-4 py-2 text-sm text-white hover:bg-dark-700"
