@@ -39,7 +39,7 @@ const [activeMenuItem, setActiveMenuItem] = useState('account');
         <div className="flex flex-col lg:flex-row gap-8">
           {/* Sidebar */}
           <div className={`lg:w-80 ${sidebarOpen ? 'block' : 'hidden lg:block'}`}>
-            <div className="bg-gray-800/50 rounded-lg border border-gray-700 p-6">
+            <div className="bg-black/60 rounded-lg   p-6">
               <nav className="space-y-2">
                 {settingsMenuItems.map((item) => (
                   <button
@@ -73,7 +73,7 @@ const [activeMenuItem, setActiveMenuItem] = useState('account');
               {dashboardCards.map((card, index) => (
                 <div
                   key={index}
-                  className="bg-gray-800/50 rounded-lg border border-gray-700 p-6 hover:border-gray-600 transition-colors"
+                  className="bg-black/60 rounded-lg   p-6 hover:border-gray-600 transition-colors"
                 >
                   <h3 className="text-sm text-gray-400 mb-2">{card.title}</h3>
                   <div className="text-4xl font-bold text-white">
@@ -85,7 +85,7 @@ const [activeMenuItem, setActiveMenuItem] = useState('account');
 
             {/* Account Details Form */}
             {activeMenuItem === 'account' && (
-              <div className="mt-8 bg-gray-800/50 rounded-lg border border-gray-700 p-6">
+              <div className="mt-8 bg-black/60 rounded-lg   p-6">
                 <h3 className="text-xl font-semibold text-white mb-6">Account Information</h3>
                 <div className="space-y-6">
                   <div>
@@ -135,7 +135,7 @@ const [activeMenuItem, setActiveMenuItem] = useState('account');
 
             {/* Notification Settings */}
             {activeMenuItem === 'notifications' && (
-              <div className="mt-8 bg-gray-800/50 rounded-lg border border-gray-700 p-6">
+              <div className="mt-8 bg-black/60 rounded-lg   p-6">
                 <h3 className="text-xl font-semibold text-white mb-6">Notification Preferences</h3>
                 <div className="space-y-4">
                   {[
@@ -159,7 +159,7 @@ const [activeMenuItem, setActiveMenuItem] = useState('account');
 
             {/* Content Management */}
             {activeMenuItem === 'content' && (
-              <div className="mt-8 bg-gray-800/50 rounded-lg border border-gray-700 p-6">
+              <div className="mt-8 bg-black/60 rounded-lg   p-6">
                 <h3 className="text-xl font-semibold text-white mb-6">Content Management</h3>
                 <div className="space-y-4">
                   <div className="flex items-center justify-between p-4 bg-gray-700/50 rounded-lg">
