@@ -26,7 +26,7 @@ const Notification: React.FC = () => {
       count: 5,
       icon: <MessageCircle className="h-6 w-6" />,
       route: '/messages',
-      color: 'text-blue-400'
+      color: 'text-grey-400'
     },
     {
       id: '2',
@@ -36,7 +36,7 @@ const Notification: React.FC = () => {
       count: 12,
       icon: <Bell className="h-6 w-6" />,
       route: '/following',
-      color: 'text-green-400'
+      color: 'text-grey-400'
     },
     {
       id: '3',
@@ -46,7 +46,7 @@ const Notification: React.FC = () => {
       count: 3,
       icon: <UserPlus className="h-6 w-6" />,
       route: '/friends/requests',
-      color: 'text-purple-400'
+      color: 'text-grey-400'
     },
     {
       id: '4',
@@ -56,7 +56,7 @@ const Notification: React.FC = () => {
       count: 8,
       icon: <Heart className="h-6 w-6" />,
       route: '/activity/likes',
-      color: 'text-red-400'
+      color: 'text-grey-400'
     },
     {
       id: '5',
@@ -66,7 +66,7 @@ const Notification: React.FC = () => {
       count: 2,
       icon: <Users className="h-6 w-6" />,
       route: '/profile/followers',
-      color: 'text-yellow-400'
+      color: 'text-grey-400'
     },
     {
       id: '6',
@@ -76,7 +76,7 @@ const Notification: React.FC = () => {
       count: 15,
       icon: <Eye className="h-6 w-6" />,
       route: '/activity/views',
-      color: 'text-indigo-400'
+      color: 'text-grey-400'
     },
     {
       id: '7',
@@ -86,7 +86,7 @@ const Notification: React.FC = () => {
       count: 1,
       icon: <ShoppingBag className="h-6 w-6" />,
       route: '/orders',
-      color: 'text-orange-400'
+      color: 'text-grey-400'
     }
   ];
 
@@ -176,7 +176,7 @@ const Notification: React.FC = () => {
               onClick={() => navigate('/messages')}
               className="bg-dark-800 hover:bg-dark-700 border border-dark-600 hover:border-primary-500 rounded-lg p-4 text-left transition-all duration-200 group"
             >
-              <MessageCircle className="h-6 w-6 text-blue-400 mb-2 group-hover:scale-110 transition-transform" />
+              <MessageCircle className="h-6 w-6 text-grey-400 mb-2 group-hover:scale-110 transition-transform" />
               <h3 className="font-semibold text-white group-hover:text-primary-300 transition-colors">Messages</h3>
               <p className="text-gray-400 text-sm">Check your conversations</p>
             </button>
@@ -185,7 +185,7 @@ const Notification: React.FC = () => {
               onClick={() => navigate('/friends/requests')}
               className="bg-dark-800 hover:bg-dark-700 border border-dark-600 hover:border-primary-500 rounded-lg p-4 text-left transition-all duration-200 group"
             >
-              <UserPlus className="h-6 w-6 text-purple-400 mb-2 group-hover:scale-110 transition-transform" />
+              <UserPlus className="h-6 w-6 text-grey-400 mb-2 group-hover:scale-110 transition-transform" />
               <h3 className="font-semibold text-white group-hover:text-primary-300 transition-colors">Friend Requests</h3>
               <p className="text-gray-400 text-sm">Manage your connections</p>
             </button>
@@ -194,7 +194,7 @@ const Notification: React.FC = () => {
               onClick={() => navigate('/settings/notifications')}
               className="bg-dark-800 hover:bg-dark-700 border border-dark-600 hover:border-primary-500 rounded-lg p-4 text-left transition-all duration-200 group"
             >
-              <Bell className="h-6 w-6 text-gray-400 mb-2 group-hover:scale-110 transition-transform" />
+              <Bell className="h-6 w-6 text-grey-400 mb-2 group-hover:scale-110 transition-transform" />
               <h3 className="font-semibold text-white group-hover:text-primary-300 transition-colors">Settings</h3>
               <p className="text-gray-400 text-sm">Manage notification preferences</p>
             </button>
