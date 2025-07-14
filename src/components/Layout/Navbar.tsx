@@ -2,7 +2,7 @@ import React, { useState, useRef, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../../contexts/AuthContext";
 import { useSearch } from "../../contexts/SearchContext";
-import { Search, Menu, X, User, LogOut, MessageCircle } from "lucide-react";
+import { Search, Menu, X, User, LogOut, MessageCircle, Bell } from "lucide-react";
 import SearchSuggestions from "../Content/SearchSuggestions";
 import { useSocket } from "../../contexts/SocketContext";
 
@@ -120,6 +120,19 @@ const Navbar: React.FC = () => {
         <div className="hidden md:flex items-center space-x-4">
           {isAuthenticated ? (
             <>
+              {/* Notification Icon */}
+              <button
+                className="relative mr-2"
+                onClick={() => navigate("/notification")}
+                aria-label="Notification"
+              >
+                <Bell className="h-6 w-6 text-white" />
+                {totalUnread > 0 && (
+                  <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full px-1.5 py-0.5 min-w-[1.2rem] text-center">
+                    {totalUnread > 99 ? "99+" : totalUnread}
+                  </span>
+                )}
+              </button>
               {/* Message Icon */}
               <button
                 className="relative mr-2"

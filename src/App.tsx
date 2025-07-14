@@ -24,6 +24,7 @@ import Collections from "./pages/Collections";
 import CollectionDetail from "./pages/CollectionDetail";
 import Messages from "./pages/Messages";
 import Settings from "./pages/Settings";
+import Notification from "./pages/Notificatoin";
 
 function App() {
   const { isAuthenticated } = useAuth();
@@ -124,6 +125,9 @@ function App() {
             {/* Messages Page */}
             <Route path="/messages" element={<Messages />} />
             <Route path="/messages/:userId" element={<Messages />} />
+
+            {/*Notification Page */}
+            <Route path="/notification" element={<Notification />} />
 
             {/* Not Found */}
             <Route path="*" element={<NotFound />} />

@@ -16,7 +16,6 @@ interface DashboardCard {
 
 const settingsMenuItems: SettingsMenuItem[] = [
   { id: 'account', label: 'Account details', icon: <Star size={16} />, active: true },
-  { id: 'data', label: 'View my data', icon: <Eye size={16} /> },
   { id: 'notifications', label: 'Notification settings', icon: <Bell size={16} /> },
   { id: 'content', label: 'Manage your content', icon: <FileText size={16} /> },
   { id: 'delete', label: 'Delete your account', icon: <Trash2 size={16} /> },
