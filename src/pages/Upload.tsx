@@ -173,7 +173,7 @@ const Upload: React.FC = () => {
 
   return (
     <div className="max-w-4xl mx-auto px-4 py-8">
-      <div className="bg-dark-800 rounded-lg shadow-lg p-6">
+      <div className="bg-dark-500 rounded-lg shadow-lg p-6">
         <div className="mb-8">
           <h1 className="text-3xl font-bold mb-2">Upload Content</h1>
           <p className="text-gray-100">
@@ -270,7 +270,7 @@ const Upload: React.FC = () => {
                 id="title"
                 value={formData.title}
                 onChange={(e) => handleInputChange("title", e.target.value)}
-                className={`w-full bg-dark-800 px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                className={`w-full bg-dark-500 px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${
                   errors.title ? "border-red-500" : "border-gray-300"
                 }`}
                 placeholder="Enter a compelling title for your content"
@@ -298,7 +298,7 @@ const Upload: React.FC = () => {
                   handleInputChange("description", e.target.value)
                 }
                 rows={4}
-                className={`w-full bg-dark-800 px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                className={`w-full bg-dark-500 px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${
                   errors.description ? "border-red-500" : "border-gray-300"
                 }`}
                 placeholder="Describe your content (optional)"
@@ -328,7 +328,7 @@ const Upload: React.FC = () => {
                   id="tags"
                   value={formData.tags}
                   onChange={(e) => handleInputChange("tags", e.target.value)}
-                  className="w-full bg-dark-800 pl-10 pr-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full bg-dark-500 pl-10 pr-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                   placeholder="Enter tags separated by commas (e.g., art, design, creative)"
                 />
               </div>
