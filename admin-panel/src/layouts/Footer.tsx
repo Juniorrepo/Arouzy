@@ -11,7 +11,7 @@ const Footer: React.FC = () => {
   ];
 
   return (
-    <footer className="bg-gray-900 border-t border-gray-800 px-6 py-4 mt-auto">
+    <footer className="bg-dark-900 border-t border-gray-800 px-6 py-4 mt-auto">
       <div className="flex flex-wrap justify-center gap-6 text-sm text-gray-400">
         {footerLinks.map((link, index) => (
           <React.Fragment key={link.label}>

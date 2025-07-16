@@ -16,7 +16,7 @@ const StatCard: React.FC<StatCardProps> = ({ title, value, icon: Icon, iconColor
   };
 
   return (
-    <div className="bg-gray-800 rounded-lg p-6 border border-gray-700">
+    <div className="bg-dark-500 rounded-lg p-6 border border-gray-700">
       <div className="flex items-center justify-between">
         <div>
           <p className="text-sm text-gray-400">{title}</p>

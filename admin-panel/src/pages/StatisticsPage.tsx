@@ -7,52 +7,52 @@ const StatisticsPage: React.FC = () => {
   const statistics = mockStatistics;
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 ">
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         <StatCard
           title="Total Users"
           value={statistics.totalUsers}
           icon={Users}
-          iconColor="text-purple-400"
+          iconColor="text-gray-400"
         />
         
         <StatCard
           title="Active Users (30 days)"
           value={statistics.activeUsers30Days}
           icon={Eye}
-          iconColor="text-green-400"
+          iconColor="text-gray-400"
         />
         
         <StatCard
           title="New Signups (30 days)"
           value={statistics.newSignups30Days}
           icon={User}
-          iconColor="text-blue-400"
+          iconColor="text-gray-400"
         />
         
         <StatCard
           title="Total Threads"
           value={statistics.totalThreads}
           icon={FileText}
-          iconColor="text-yellow-400"
+          iconColor="text-gray-400"
         />
         
         <StatCard
           title="Total Posts"
           value={statistics.totalPosts}
           icon={FileText}
-          iconColor="text-orange-400"
+          iconColor="text-gray-400"
         />
         
         <StatCard
           title="Pending Moderation"
           value={statistics.pendingModeration}
           icon={Shield}
-          iconColor="text-red-400"
+          iconColor="text-gray-400"
         />
       </div>
       
-      <div className="bg-gray-800 rounded-lg p-6 border border-gray-700">
+      <div className="bg-dark-500 rounded-lg p-6 border border-gray-700">
         <h3 className="text-lg font-semibold text-white mb-4">Activity Overview</h3>
         <div className="space-y-3">
           <div className="flex justify-between items-center">
