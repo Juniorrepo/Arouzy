@@ -149,6 +149,9 @@ export const userService = {
   getUserProfile: async () => {
     return api.get("/api/user/profile");
   },
+  getUserDashboard: async () => {
+    return api.get("/api/user/dashboard");
+  },
   updateUserProfile: async (data: {
     username?: string;
     email?: string;
@@ -328,6 +331,40 @@ export interface Collection {
   contentCount: number;
   createdAt: string;
   updatedAt: string;
+}
+
+export interface UserDashboard {
+  user: {
+    id: number;
+    username: string;
+    email: string;
+  };
+  content: Array<{
+    id: number;
+    title: string;
+    description?: string;
+    imageCount: number;
+    videoCount: number;
+    thumbnail: string;
+    createdAt: string;
+    upvotes: number;
+    user: {
+      id: number;
+      username: string;
+    };
+    images?: Array<{
+      id: number;
+      imageUrl: string;
+      imageOrder: number;
+    }>;
+  }>;
+  collections: Collection[];
+  stats: {
+    contentCount: number;
+    collectionCount: number;
+    totalUpvotes: number;
+    followerCount: number;
+  };
 }
 
 export interface CollectionContent {
