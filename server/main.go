@@ -88,6 +88,7 @@ func main() {
 	userRouter := apiRouter.PathPrefix("/user").Subrouter()
 	userRouter.HandleFunc("/profile", middleware.AuthMiddleware(handlers.GetUserProfileHandler)).Methods("GET")
 	userRouter.HandleFunc("/profile", middleware.AuthMiddleware(handlers.UpdateUserProfileHandler)).Methods("PUT")
+	userRouter.HandleFunc("/dashboard", middleware.AuthMiddleware(handlers.GetUserDashboardHandler)).Methods("GET")
 
 	// File upload routes
 	apiRouter.HandleFunc("/upload", handlers.UploadHandler).Methods("POST", "OPTIONS")
