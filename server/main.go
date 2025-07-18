@@ -47,7 +47,7 @@ func main() {
 	}
 
 	// Create the router
-	router := mux.NewRouter()
+	router := mux.NewRouter().StrictSlash(true)
 
 	// Set up API routes
 	apiRouter := router.PathPrefix("/api").Subrouter()
@@ -72,10 +72,10 @@ func main() {
 
 	// Content routes
 	contentRouter := apiRouter.PathPrefix("/content").Subrouter()
-	contentRouter.HandleFunc("", handlers.GetContentHandler).Methods("GET")
+	contentRouter.HandleFunc("/", handlers.GetContentHandler).Methods("GET")
 	contentRouter.HandleFunc("/{id}", handlers.GetContentByIdHandler).Methods("GET")
 	contentRouter.HandleFunc("", middleware.AuthMiddleware(handlers.CreateContentHandler)).Methods("POST")
-	
+
 	// Tags route
 	apiRouter.HandleFunc("/tags", handlers.GetTagsHandler).Methods("GET")
 
@@ -104,7 +104,7 @@ func main() {
 	tradingRouter.HandleFunc("/requests", middleware.AuthMiddleware(handlers.ListTradeRequestsHandler)).Methods("GET")
 	tradingRouter.HandleFunc("/request/{id}/accept", middleware.AuthMiddleware(handlers.AcceptTradeRequestHandler)).Methods("POST")
 	tradingRouter.HandleFunc("/request/{id}/reject", middleware.AuthMiddleware(handlers.RejectTradeRequestHandler)).Methods("POST")
-	
+
 	// Debug route (remove in production)
 	tradingRouter.HandleFunc("/debug/requests", handlers.DebugTradeRequestsHandler).Methods("GET")
 

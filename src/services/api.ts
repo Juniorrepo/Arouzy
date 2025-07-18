@@ -96,7 +96,7 @@ export const contentService = {
     return api.get(`/api/content/${id}`);
   },
   getContentByUser: async (username: string, page = 1, sort = "hot") => {
-    return api.get("/api/content", { params: { page, sort, username } });
+    return api.get(`/api/content`, { params: { page, sort, username } });
   },
   getCollectionsByUser: async (userId: number, page = 1, sort = "hot") => {
     return api.get("/api/content", {
